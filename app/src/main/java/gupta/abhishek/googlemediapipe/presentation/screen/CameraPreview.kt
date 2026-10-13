@@ -55,6 +55,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
+import gupta.abhishek.googlemediapipe.core.fruits.Fruits
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandAnalyzer
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandLandmarkerHelper
 import kotlin.random.Random
@@ -63,7 +64,7 @@ import kotlin.random.Random
 // ---------------------------------------------------------------------
 // GAME SETTINGS (change these numbers to tune the game)
 // ---------------------------------------------------------------------
-private const val BALL_RADIUS = 84f      // size of the falling fruit, in pixels
+private const val BALL_RADIUS = 120f      // size of the falling fruit, in pixels
 private const val BOMB_CHANCE = 0.18f    // chance that the next item is a bomb (0.18 = 18%)
 private const val BOMBS_START_SCORE = 3  // no bombs until you have this many points
 private const val CUT_SHAKE_POWER = 10f  // small camera shake on every fruit cut, in pixels
