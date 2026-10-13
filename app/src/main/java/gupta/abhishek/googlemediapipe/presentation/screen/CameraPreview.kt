@@ -10,15 +10,15 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -40,8 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -51,44 +51,70 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
+import gupta.abhishek.googlemediapipe.core.fruits.Blast
+import gupta.abhishek.googlemediapipe.core.fruits.FruitType
 import gupta.abhishek.googlemediapipe.core.fruits.Fruits
+import gupta.abhishek.googlemediapipe.core.fruits.drawBlast
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandAnalyzer
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandLandmarkerHelper
 import kotlin.random.Random
 
 
 // ---------------------------------------------------------------------
-// GAME SETTINGS (change these numbers to tune the game)
+// GAME SETTINGS
+// Change these numbers to tune the game.
 // ---------------------------------------------------------------------
-private const val BALL_RADIUS = 120f      // size of the falling fruit, in pixels
-private const val BOMB_CHANCE = 0.18f    // chance that the next item is a bomb (0.18 = 18%)
-private const val BOMBS_START_SCORE = 3  // no bombs until you have this many points
-private const val CUT_SHAKE_POWER = 10f  // small camera shake on every fruit cut, in pixels
-private const val CUT_SHAKE_SECONDS = 0.15f
-private const val FRUIT_SPIN = 90f       // how fast the falling fruit turns, degrees per second
-private const val CATCH_EXTRA = 20f      // extra forgiving distance so catching feels easier
-private const val START_FALL_SPEED = 400f   // falling speed at score 0, pixels per second
-private const val SPEED_PER_POINT = 40f     // extra speed added for every point scored
-private const val MAX_FALL_SPEED = 1600f    // speed limit so the game stays playable
-private const val START_LIVES = 5           // lives you get at the start
 
-// RESTART BUTTON (round, top right, only visible on game over). Sizes are in dp.
-private const val RESTART_SIZE_DP = 96f         // diameter of the round button
-private const val RESTART_MARGIN_TOP_DP = 24f   // distance from the top edge
-private const val RESTART_MARGIN_END_DP = 24f   // distance from the right edge
-private const val HOLD_TO_RESTART_SECONDS = 0.5f // keep your hand on the button this long (0 = instant)
+// ----- Fruit size -----
+private const val FRUIT_BASE_RADIUS_PX = 120f     // base size of every fruit, in pixels
+private const val FRUIT_SIZE_MULTIPLIER = 1.2f    // global size: 1.2f = 20% bigger, 0.8f = 20% smaller
+
+// ----- Bombs -----
+private const val BOMB_SPAWN_CHANCE = 0.18f       // chance the next item is a bomb (0.18 = 18%)
+private const val BOMBS_UNLOCK_SCORE = 3          // no bombs until the score reaches this
+
+// ----- Camera shake on cuts -----
+private const val CUT_SHAKE_STRENGTH_PX = 10f     // how far the picture jolts on every cut
+private const val CUT_SHAKE_DURATION_SECONDS = 0.15f
+
+// ----- Movement -----
+private const val FRUIT_SPIN_DEGREES_PER_SECOND = 90f
+private const val START_FALL_SPEED_PX_PER_SECOND = 400f
+private const val FALL_SPEED_INCREASE_PER_POINT = 40f
+private const val MAX_FALL_SPEED_PX_PER_SECOND = 1600f
+
+// ----- Hand catching -----
+private const val CATCH_EXTRA_REACH_PX = 20f      // extra distance so catching feels easier
+
+// ----- Lives -----
+private const val STARTING_LIVES = 5
+
+// ----- Restart button (round, top right, shown on game over). Sizes in dp. -----
+private const val RESTART_BUTTON_SIZE_DP = 120f
+private const val RESTART_BUTTON_MARGIN_TOP_DP = 50f
+private const val RESTART_BUTTON_MARGIN_END_DP = 50f
+private const val RESTART_HOLD_SECONDS = 0.5f     // keep your hand on the button this long (0 = instant)
+
+
+// ---------------------------------------------------------------------
+// fruitRadiusFor
+//   The real on-screen radius of a fruit, in pixels.
+//   Combines the base size, the fruit's own sizeScale, and the global multiplier.
+//   Use this everywhere a fruit is drawn, cut, or hit-checked.
+// ---------------------------------------------------------------------
+private fun fruitRadiusFor(fruit: FruitType): Float =
+    FRUIT_BASE_RADIUS_PX * fruit.sizeScale * FRUIT_SIZE_MULTIPLIER
+
 
 // ---------------------------------------------------------------------
 // CameraPreview
-//   Shows the camera, draws falling fruits and bombs on top of it,
-//   and adds +1 to the score when any hand landmark touches the circle.
+//   Shows the camera, drops fruits and bombs on top of it,
+//   and scores a point when a hand touches a falling fruit.
 //
-//   helper     -> MediaPipe helper (same as before, feeds camera frames to MediaPipe)
-//   handResult -> latest hand detection result coming from MainActivity (NEW)
+//   helper     -> MediaPipe helper that receives camera frames
+//   handResult -> latest hand detection result from MainActivity
 // ---------------------------------------------------------------------
 @Composable
 fun CameraPreview(
@@ -97,309 +123,246 @@ fun CameraPreview(
     modifier: Modifier = Modifier
 ) {
 
-    // ---------------- VARIABLES ----------------
+    // ---------------- GAME STATE ----------------
 
-    // THE SCORE. rememberSaveable = survives screen rotation / activity recreate.
-    var score by rememberSaveable { mutableStateOf(0) }
+    // Current score. Saved across screen rotation.
+    var currentScore by rememberSaveable { mutableStateOf(0) }
 
-    // HIGH SCORE. Best score so far. Also saved across screen rotation.
-    var highScore by rememberSaveable { mutableStateOf(0) }
+    // Best score so far. Saved across screen rotation.
+    var bestScore by rememberSaveable { mutableStateOf(0) }
 
-    // LIVES. Starts at 5, goes down by 1 every time a ball is missed.
-    // When it reaches 0 the game is over.
-    var lives by rememberSaveable { mutableStateOf(START_LIVES) }
+    // Lives left. Game over when this reaches 0.
+    var livesLeft by rememberSaveable { mutableStateOf(STARTING_LIVES) }
 
-    // SOUNDS. Created once, holds all the sound effects and the music (see GameSounds.kt).
-    val context = LocalContext.current
-    val sounds = remember { GameSounds(context) }
+    // Whether the "new best score" message was already shown this game.
+    var newBestAnnounced by remember { mutableStateOf(false) }
 
-    // Did we already play the "new high score" fanfare in this game? (so it plays only once)
-    var recordAnnounced by remember { mutableStateOf(false) }
+    // Size of the whole screen area in pixels (needed to know where the bottom is).
+    var screenSize by remember { mutableStateOf(IntSize.Zero) }
 
-    // Newest lives value for the lifecycle observer below (same trick as latestHand).
-    val latestLives by rememberUpdatedState(lives)
 
-    // Size of this whole screen area in pixels (we need it to know where "bottom" is).
-    var boxSize by remember { mutableStateOf(IntSize.Zero) }
+    // ---------------- FALLING ITEM STATE ----------------
 
-    // Ball position (center of the circle). Starts just above the top of the screen.
-    var ballX by remember { mutableStateOf(0f) }
-    var ballY by remember { mutableStateOf(-BALL_RADIUS) }
+    // Center of the falling item.
+    var itemX by remember { mutableStateOf(0f) }
+    var itemY by remember { mutableStateOf(-FRUIT_BASE_RADIUS_PX) }
 
-    // The fruit that is falling right now (picked from the Fruits list in Fruits.kt).
+    // The fruit falling right now.
     var currentFruit by remember { mutableStateOf(Fruits.all.random()) }
 
-    // How much the falling fruit is turned, in degrees.
-    var fruitAngle by remember { mutableStateOf(0f) }
+    // Spin angle of the falling fruit, in degrees.
+    var fruitSpinAngle by remember { mutableStateOf(0f) }
 
-    // All cut animations that are running right now (dagger, halves, water).
-    val cuts = remember { mutableStateListOf<FruitCut>() }
-
-    // The bomb that is falling right now. null means the falling item is a fruit.
+    // The bomb falling right now. null means the falling item is a fruit.
     var currentBomb by remember { mutableStateOf<BombType?>(null) }
 
-    // All explosions that are running right now.
-    val blasts = remember { mutableStateListOf<Blast>() }
 
-    // CAMERA SHAKE. shakeX / shakeY = how far the picture is pushed right now.
-    // The other three describe the running shake: power, time left, total time.
-    var shakeX by remember { mutableStateOf(0f) }
-    var shakeY by remember { mutableStateOf(0f) }
-    var shakePower by remember { mutableStateOf(0f) }
-    var shakeLeft by remember { mutableStateOf(0f) }
-    var shakeTotal by remember { mutableStateOf(0.001f) }
+    // ---------------- EFFECTS STATE ----------------
 
-    // How full the restart "hold" is, 0.0 to 1.0. Used to color the button while your hand is on it.
-    var restartProgress by remember { mutableStateOf(0f) }
+    // Cut animations currently running (knife, halves, juice).
+    val runningCuts = remember { mutableStateListOf<FruitCut>() }
 
-    // Convert the button settings from dp to real pixels (hand points are measured in pixels).
+    // Explosions currently running.
+    val runningBlasts = remember { mutableStateListOf<Blast>() }
+
+    // Camera shake: current offset, plus the running shake's strength and timing.
+    var shakeOffsetX by remember { mutableStateOf(0f) }
+    var shakeOffsetY by remember { mutableStateOf(0f) }
+    var shakeStrength by remember { mutableStateOf(0f) }
+    var shakeSecondsLeft by remember { mutableStateOf(0f) }
+    var shakeSecondsTotal by remember { mutableStateOf(0.001f) }
+
+    // How long the hand has been on the restart button, 0.0 to 1.0 of the hold time.
+    var restartHoldProgress by remember { mutableStateOf(0f) }
+
+
+    // Convert the restart button settings from dp to pixels (hand points are in pixels).
     val density = LocalDensity.current
-    val buttonSizePx = with(density) { RESTART_SIZE_DP.dp.toPx() }
-    val buttonTopPx = with(density) { RESTART_MARGIN_TOP_DP.dp.toPx() }
-    val buttonEndPx = with(density) { RESTART_MARGIN_END_DP.dp.toPx() }
+    val restartButtonSizePx = with(density) { RESTART_BUTTON_SIZE_DP.dp.toPx() }
+    val restartButtonTopPx = with(density) { RESTART_BUTTON_MARGIN_TOP_DP.dp.toPx() }
+    val restartButtonEndPx = with(density) { RESTART_BUTTON_MARGIN_END_DP.dp.toPx() }
 
-    // SPAWN BALL: puts a new item at a random spot at the top.
-    // Usually a random fruit, sometimes a bomb (but never before BOMBS_START_SCORE points).
-    val spawnBall = {
-        if (score >= BOMBS_START_SCORE && Random.nextFloat() < BOMB_CHANCE) {
+
+    // ---------------- HELPER FUNCTIONS ----------------
+
+    // Drops the next item from the top: usually a fruit, sometimes a bomb.
+    val dropNextItem = {
+        if (currentScore >= BOMBS_UNLOCK_SCORE && Random.nextFloat() < BOMB_SPAWN_CHANCE) {
             currentBomb = Bombs.random()
         } else {
             currentBomb = null
             currentFruit = Fruits.all.random()
         }
-        ballX = randomBallX(boxSize.width)
-        ballY = -BALL_RADIUS
+        itemX = randomItemX(screenSize.width)
+        itemY = -FRUIT_BASE_RADIUS_PX
     }
 
-    // START SHAKE: shakes the camera picture. A weaker shake never replaces a stronger one.
-    val startShake = { power: Float, seconds: Float ->
-        val strengthNow = shakePower * (shakeLeft / shakeTotal).coerceIn(0f, 1f)
-        if (power >= strengthNow) {
-            shakePower = power
-            shakeTotal = seconds
-            shakeLeft = seconds
+    // Starts a camera shake. A weaker shake never replaces a stronger one still running.
+    val startCameraShake = { strength: Float, durationSeconds: Float ->
+        val currentStrengthLeft = shakeStrength * (shakeSecondsLeft / shakeSecondsTotal).coerceIn(0f, 1f)
+        if (strength >= currentStrengthLeft) {
+            shakeStrength = strength
+            shakeSecondsTotal = durationSeconds
+            shakeSecondsLeft = durationSeconds
         }
     }
 
-    // RESTART: puts everything back to the start. Used by the touch button,
-    // by the hand on the button, and by the "Play again" button on the game over box.
+    // Resets the whole game to the start.
     val restartGame = {
-        score = 0
-        lives = START_LIVES
-        recordAnnounced = false
-        cuts.clear()
-        blasts.clear()
-        shakeLeft = 0f
-        sounds.playRestart()
-        spawnBall()
+        currentScore = 0
+        livesLeft = STARTING_LIVES
+        newBestAnnounced = false
+        runningCuts.clear()
+        runningBlasts.clear()
+        shakeSecondsLeft = 0f
+        dropNextItem()
     }
 
-    // ---------------- MUSIC ----------------
-    // Music plays while you have lives, and pauses on game over.
-    LaunchedEffect(lives) {
-        if (lives > 0) sounds.startMusic() else sounds.pauseMusic()
-    }
-
-    // Pause the music when the app goes to the background, continue when it comes back.
-    // Also free the sounds when the screen closes.
-    DisposableEffect(Unit) {
-        val lifecycle = (context as LifecycleOwner).lifecycle
-
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_PAUSE) {
-                sounds.pauseMusic()
-            }
-            if (event == Lifecycle.Event.ON_RESUME && latestLives > 0) {
-                sounds.startMusic()
-            }
-        }
-
-        lifecycle.addObserver(observer)
-
-        onDispose {
-            lifecycle.removeObserver(observer)
-            sounds.release()
-        }
-    }
-
-    // The game loop below runs for a long time, so it must not hold an OLD handResult.
-    // rememberUpdatedState always gives us the newest value when we read it.
-    val latestHand by rememberUpdatedState(handResult)
+    // The game loop runs for a long time, so it must always read the newest hand result.
+    val latestHandResult by rememberUpdatedState(handResult)
 
 
     // ---------------- GAME LOOP ----------------
-    // Runs once the screen size is known. Runs again if the size changes.
-    LaunchedEffect(boxSize) {
+    // Runs once the screen size is known, and again if the size changes.
+    LaunchedEffect(screenSize) {
 
-        // Screen not measured yet, nothing to do.
-        if (boxSize.width == 0 || boxSize.height == 0) return@LaunchedEffect
+        if (screenSize.width == 0 || screenSize.height == 0) return@LaunchedEffect
 
-        // Put the first ball at the top.
-        spawnBall()
+        dropNextItem()
 
-        var lastFrameTime = 0L
+        var previousFrameTimeNanos = 0L
 
-        // Loop forever (it stops automatically when the screen is closed).
         while (true) {
 
-            // withFrameNanos waits for the next screen refresh (about 60 times a second).
-            withFrameNanos { frameTime ->
+            withFrameNanos { frameTimeNanos ->
 
-                // How many seconds passed since the last frame.
-                if (lastFrameTime == 0L) lastFrameTime = frameTime
-                val seconds = (frameTime - lastFrameTime) / 1_000_000_000f
-                lastFrameTime = frameTime
+                // Seconds since the last frame.
+                if (previousFrameTimeNanos == 0L) previousFrameTimeNanos = frameTimeNanos
+                val secondsSinceLastFrame = (frameTimeNanos - previousFrameTimeNanos) / 1_000_000_000f
+                previousFrameTimeNanos = frameTimeNanos
 
-                // HAND ON THE RESTART BUTTON?
-                // The button is a circle: find its center and radius in pixels.
-                val buttonRadius = buttonSizePx / 2f
-                val buttonCenterX = boxSize.width - buttonEndPx - buttonRadius
-                val buttonCenterY = buttonTopPx + buttonRadius
+                // ----- Restart button hold check (only on game over) -----
+                val restartButtonRadiusPx = restartButtonSizePx / 2f
+                val restartButtonCenterX = screenSize.width - restartButtonEndPx - restartButtonRadiusPx
+                val restartButtonCenterY = restartButtonTopPx + restartButtonRadiusPx
 
-                // The button only exists on game over, so only then can the hand press it.
-                val handOnButton = lives <= 0 && isHandInCircle(
-                    result = latestHand,
-                    centerX = buttonCenterX,
-                    centerY = buttonCenterY,
-                    radius = buttonRadius,
-                    width = boxSize.width,
-                    height = boxSize.height
+                val handIsOnRestartButton = livesLeft <= 0 && isHandInCircle(
+                    result = latestHandResult,
+                    centerX = restartButtonCenterX,
+                    centerY = restartButtonCenterY,
+                    radius = restartButtonRadiusPx,
+                    width = screenSize.width,
+                    height = screenSize.height
                 )
 
-                if (handOnButton) {
-                    // Count how long the hand stays on the button.
-                    restartProgress += seconds
-                    if (restartProgress >= HOLD_TO_RESTART_SECONDS) {
-                        restartProgress = 0f
+                if (handIsOnRestartButton) {
+                    restartHoldProgress += secondsSinceLastFrame
+                    if (restartHoldProgress >= RESTART_HOLD_SECONDS) {
+                        restartHoldProgress = 0f
                         restartGame()
                     }
                 } else {
-                    restartProgress = 0f   // hand left, start over
+                    restartHoldProgress = 0f
                 }
 
-                // Move all cut animations forward in time and remove the finished ones.
-                for (cut in cuts) {
-                    cut.age += seconds
+                // ----- Move cut animations and explosions forward, remove finished ones -----
+                for (cut in runningCuts) {
+                    cut.age += secondsSinceLastFrame
                 }
-                cuts.removeAll { it.age > CUT_DURATION }
+                runningCuts.removeAll { it.age > CUT_DURATION }
 
-                // Same for explosions.
-                for (blast in blasts) {
-                    blast.age += seconds
+                for (blast in runningBlasts) {
+                    blast.age += secondsSinceLastFrame
                 }
-                blasts.removeAll { it.age > it.duration }
+                runningBlasts.removeAll { it.age > it.duration }
 
-                // Camera shake: push the picture a random bit every frame, weaker and weaker.
-                if (shakeLeft > 0f) {
-                    shakeLeft -= seconds
-                    val strength = shakePower * (shakeLeft / shakeTotal).coerceIn(0f, 1f)
-                    shakeX = (Random.nextFloat() * 2f - 1f) * strength
-                    shakeY = (Random.nextFloat() * 2f - 1f) * strength
+                // ----- Camera shake -----
+                if (shakeSecondsLeft > 0f) {
+                    shakeSecondsLeft -= secondsSinceLastFrame
+                    val strengthNow = shakeStrength * (shakeSecondsLeft / shakeSecondsTotal).coerceIn(0f, 1f)
+                    shakeOffsetX = (Random.nextFloat() * 2f - 1f) * strengthNow
+                    shakeOffsetY = (Random.nextFloat() * 2f - 1f) * strengthNow
                 } else {
-                    shakeX = 0f
-                    shakeY = 0f
+                    shakeOffsetX = 0f
+                    shakeOffsetY = 0f
                 }
 
-                // GAME OVER: freeze the ball and wait for the restart button.
-                if (lives <= 0) return@withFrameNanos
+                // ----- Game over: freeze the item and wait for restart -----
+                if (livesLeft <= 0) return@withFrameNanos
 
-                // Ball gets faster as the score grows, but never above the limit.
-                val speed = minOf(
-                    START_FALL_SPEED + score * SPEED_PER_POINT,
-                    MAX_FALL_SPEED
+                // ----- Falling speed: grows with the score, up to a limit -----
+                val fallSpeed = minOf(
+                    START_FALL_SPEED_PX_PER_SECOND + currentScore * FALL_SPEED_INCREASE_PER_POINT,
+                    MAX_FALL_SPEED_PX_PER_SECOND
                 )
 
-                // 1) Move the ball down.
-                ballY += speed * seconds
-                fruitAngle += FRUIT_SPIN * seconds
+                // 1) Move the item down and spin the fruit.
+                itemY += fallSpeed * secondsSinceLastFrame
+                fruitSpinAngle += FRUIT_SPIN_DEGREES_PER_SECOND * secondsSinceLastFrame
 
-                // 2) Did a hand touch the item? Bombs can be bigger than fruits.
+                // 2) Check the hit. Bombs use their own size. Fruits use the shared size rule.
                 val bomb = currentBomb
-                val itemRadius = BALL_RADIUS * (bomb?.sizeScale ?: 1f)
+                val itemRadius = if (bomb != null) {
+                    FRUIT_BASE_RADIUS_PX * bomb.sizeScale
+                } else {
+                    fruitRadiusFor(currentFruit)
+                }
 
-                val caught = isBallTouched(
-                    result = latestHand,
-                    ballX = ballX,
-                    ballY = ballY,
+                val itemWasTouched = isItemTouchedByHand(
+                    result = latestHandResult,
+                    itemX = itemX,
+                    itemY = itemY,
                     radius = itemRadius,
-                    width = boxSize.width,
-                    height = boxSize.height
+                    width = screenSize.width,
+                    height = screenSize.height
                 )
 
-                if (caught && bomb != null) {
-                    // ---------- BOOM! A bomb was cut ----------
-                    blasts.add(Blast(bomb, ballX, ballY, itemRadius))
-                    startShake(bomb.shakePower, bomb.shakeSeconds)
+                if (itemWasTouched && bomb != null) {
+                    // ---------- A BOMB WAS CUT ----------
+                    runningBlasts.add(Blast(bomb, itemX, itemY, itemRadius))
+                    startCameraShake(bomb.shakePower, bomb.shakeSeconds)
 
-                    // Lose lives. The mega bomb takes all of them = game over.
-                    lives = (lives - bomb.livesLost).coerceAtLeast(0)
+                    livesLeft = (livesLeft - bomb.livesLost).coerceAtLeast(0)
 
-                    sounds.playFall()
-                    if (lives <= 0) {
-                        // No lives left: game over sound, hide the bomb, everything freezes.
-                        sounds.playGameOver()
-                        ballY = -itemRadius * 2f
+                    if (livesLeft <= 0) {
+                        itemY = -itemRadius * 2f   // hide the bomb, game over
                     } else {
-                        // Still alive: sad sound and a new item.
-                        sounds.playLifeLost()
-                        spawnBall()
+                        dropNextItem()
                     }
 
-                } else if (caught) {
-                    // ---------- A fruit was cut ----------
-                    // Add a point.
-                    score = score + 1
+                } else if (itemWasTouched) {
+                    // ---------- A FRUIT WAS CUT ----------
+                    currentScore += 1
 
-                    // Start the cut animation where the fruit is: dagger, halves, water.
-                    cuts.add(FruitCut(currentFruit, ballX, ballY, BALL_RADIUS, fruitAngle))
+                    runningCuts.add(
+                        FruitCut(currentFruit, itemX, itemY, fruitRadiusFor(currentFruit), fruitSpinAngle)
+                    )
+                    startCameraShake(CUT_SHAKE_STRENGTH_PX, CUT_SHAKE_DURATION_SECONDS)
 
-                    // Small camera shake for every cut.
-                    startShake(CUT_SHAKE_POWER, CUT_SHAKE_SECONDS)
-
-                    // Dagger swoosh and the pop of the cut.
-                    sounds.playSwoosh()
-                    sounds.playCatch()
-
-                    // One extra sound on top, the most special one wins:
-                    //   passed your old high score (once per game) -> fanfare
-                    //   every 10th point                           -> level up
-                    //   every 4th point                            -> plus four ping
-                    val passedOldRecord = score > highScore && highScore > 0 && !recordAnnounced
-                    if (passedOldRecord) {
-                        sounds.playHighScore()
-                        recordAnnounced = true
-                    } else if (score % 10 == 0) {
-                        sounds.playLevelUp()
-                    } else if (score % 4 == 0) {
-                        sounds.playScorePlusFour()
+                    val beatBestScoreNow = currentScore > bestScore && bestScore > 0 && !newBestAnnounced
+                    if (beatBestScoreNow) {
+                        newBestAnnounced = true
                     }
 
-                    // Beat the old record? Then this score is the new high score.
-                    if (score > highScore) {
-                        highScore = score
+                    if (currentScore > bestScore) {
+                        bestScore = currentScore
                     }
 
-                    // Send a new item from the top.
-                    spawnBall()
+                    dropNextItem()
 
-                } else if (ballY - itemRadius > boxSize.height) {
-                    // The item fell off the bottom.
+                } else if (itemY - itemRadius > screenSize.height) {
+                    // ---------- THE ITEM FELL OFF THE BOTTOM ----------
                     if (bomb != null) {
-                        // A bomb that you did not touch is GOOD. Nothing happens, next item.
-                        spawnBall()
+                        // Missing a bomb is good: just drop the next item.
+                        dropNextItem()
                     } else {
-                        // A missed fruit costs one life.
-                        lives = lives - 1
-                        sounds.playFall()
+                        // Missing a fruit costs one life.
+                        livesLeft = livesLeft - 1
 
-                        if (lives <= 0) {
-                            // Last life gone: game over sound, hide the fruit, everything freezes.
-                            sounds.playGameOver()
-                            ballY = -itemRadius * 2f
+                        if (livesLeft <= 0) {
+                            itemY = -itemRadius * 2f   // hide the fruit, game over
                         } else {
-                            // Still alive: sad sound and a new item.
-                            sounds.playLifeLost()
-                            spawnBall()
+                            dropNextItem()
                         }
                     }
                 }
@@ -409,62 +372,54 @@ fun CameraPreview(
 
 
     // ---------------- UI ----------------
-    // Box stacks things on top of each other: camera at the bottom,
-    // then the ball, then the score text.
     Box(
         modifier = modifier.onSizeChanged { newSize ->
-            boxSize = newSize          // remember how big the screen area is
+            screenSize = newSize
         }
     ) {
 
-        // LAYER 1 + 2 sit together in their own Box, so the camera picture
-        // AND everything drawn on it shake together (camera shake!).
+        // Camera picture and the game drawings share one box so they shake together.
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    translationX = shakeX
-                    translationY = shakeY
+                    translationX = shakeOffsetX
+                    translationY = shakeOffsetY
                 }
         ) {
 
-            // LAYER 1: the camera picture.
+            // Camera picture.
             CameraView(helper = helper)
 
-            // LAYER 2: the falling item, the cut animations and the explosions.
+            // Falling item, cut animations and explosions.
             Canvas(modifier = Modifier.fillMaxSize()) {
 
                 val bomb = currentBomb
 
                 if (bomb != null) {
-                    // A bomb (does not turn, so the fuse stays on top).
-                    translate(ballX, ballY) {
-                        drawBomb(bomb, BALL_RADIUS * bomb.sizeScale, fruitAngle)
+                    // Bombs do not spin, so the fuse stays on top.
+                    translate(itemX, itemY) {
+                        drawBomb(bomb, FRUIT_BASE_RADIUS_PX * bomb.sizeScale, fruitSpinAngle)
                     }
                 } else {
-                    // A fruit: move to its position, turn it, draw it.
-                    translate(ballX, ballY) {
-                        rotate(degrees = fruitAngle, pivot = Offset.Zero) {
-                            currentFruit.draw(this, BALL_RADIUS)
+                    translate(itemX, itemY) {
+                        rotate(degrees = fruitSpinAngle, pivot = Offset.Zero) {
+                            currentFruit.draw(this, fruitRadiusFor(currentFruit))
                         }
                     }
                 }
 
-                // Every running cut animation.
-                for (cut in cuts) {
+                for (cut in runningCuts) {
                     drawFruitCut(cut)
                 }
 
-                // Every running explosion (drawn last = on top of everything).
-                for (blast in blasts) {
+                for (blast in runningBlasts) {
                     drawBlast(blast)
                 }
             }
         }
 
-        // LAYER 3: the info panel at the top center.
-        // One single row (Score | Lives | Best) so it is wide but NOT tall,
-        // which keeps the play area big.
+        // Info panel at the top center: Score | Lives | Best | Hand status.
         Row(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -474,64 +429,53 @@ fun CameraPreview(
                     RoundedCornerShape(16.dp)
                 )
                 .padding(horizontal = 24.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(24.dp),   // gap between items
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            // Item 1: current score.
             Text(
-                text = "Score: $score",
+                text = "Score: $currentScore",
                 color = Color.White,
                 fontSize = 22.sp
             )
 
-            // Item 2: lives. 3 or more lives = green. Only 1 or 2 left = red alert.
-            val livesColor = if (lives >= 3) Color(0xFF4CAF50) else Color(0xFFFF5252)
-            val livesText = if (lives >= 3) "Lives: $lives" else "\u26A0\uFE0F Lives: $lives"
+            val livesColor = if (livesLeft >= 3) Color(0xFF4CAF50) else Color(0xFFFF5252)
+            val livesText = if (livesLeft >= 3) "Lives: $livesLeft" else "\u26A0\uFE0F Lives: $livesLeft"
             Text(
                 text = livesText,
                 color = livesColor,
                 fontSize = 22.sp
             )
 
-            // Item 3: high score. Sunglasses when you are AT the record right now,
-            // trophy otherwise.
-            val atRecord = score > 0 && score >= highScore
-            val bestEmoji = if (atRecord) "\uD83D\uDE0E" else "\uD83C\uDFC6"
+            val isAtBestScore = currentScore > 0 && currentScore >= bestScore
+            val bestEmoji = if (isAtBestScore) "\uD83D\uDE0E" else "\uD83C\uDFC6"
             Text(
-                text = "$bestEmoji Best: $highScore",
+                text = "$bestEmoji Best: $bestScore",
                 color = Color.Yellow,
                 fontSize = 22.sp
             )
 
-            // Item 4: hand status (moved here from MainActivity).
-            // No hand seen by the camera = red message. Hand seen = green "Hand OK".
-            val handVisible = handResult?.landmarks()?.isEmpty() == false
+            val handIsVisible = handResult?.landmarks()?.isEmpty() == false
             Text(
-                text = if (handVisible) "\u270B Hand OK" else "\u270B Show your hand",
-                color = if (handVisible) Color(0xFF4CAF50) else Color(0xFFFF5252),
+                text = if (handIsVisible) "\u270B Hand OK" else "\u270B Show your hand",
+                color = if (handIsVisible) Color(0xFF4CAF50) else Color(0xFFFF5252),
                 fontSize = 22.sp
             )
         }
 
-        // LAYER 4: ROUND RESTART button in the top right corner.
-        // It only appears when the game is over.
-        // Works by touch AND by holding your hand on it.
-        // While your hand is on it the button slowly turns green (that is the hold timer).
-        if (lives <= 0) {
-            val holdFraction = if (HOLD_TO_RESTART_SECONDS > 0f)
-                (restartProgress / HOLD_TO_RESTART_SECONDS).coerceIn(0f, 1f) else 0f
+        // Round restart button, top right. Only on game over.
+        // Works by touch and by holding your hand on it.
+        if (livesLeft <= 0) {
+            val holdFraction = if (RESTART_HOLD_SECONDS > 0f)
+                (restartHoldProgress / RESTART_HOLD_SECONDS).coerceIn(0f, 1f) else 0f
             Button(
-                onClick = {
-                    sounds.playUiTouch()
-                    restartGame()
-                },
+                onClick = { restartGame() },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = RESTART_MARGIN_TOP_DP.dp, end = RESTART_MARGIN_END_DP.dp)
-                    .size(RESTART_SIZE_DP.dp),
-                shape = CircleShape,                       // makes it round
-                contentPadding = PaddingValues(0.dp),      // so the icon fits inside the circle
+                    .padding(top = RESTART_BUTTON_MARGIN_TOP_DP.dp, end = RESTART_BUTTON_MARGIN_END_DP.dp)
+                    .size(RESTART_BUTTON_SIZE_DP.dp),
+                shape = CircleShape,
+                contentPadding = PaddingValues(0.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = lerp(
                         Color.Black.copy(alpha = 0.65f),
@@ -541,59 +485,52 @@ fun CameraPreview(
                     contentColor = Color.White
                 )
             ) {
-                Text("\uD83D\uDD04", fontSize = 40.sp)
+                Text("\uD83D\uDD04", fontSize = 70.sp)
             }
         }
 
-        // LAYER 5: GAME OVER box. Only shown when lives are finished.
-        if (lives <= 0) {
+        // Game over card.
+        if (livesLeft <= 0) {
             Column(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .background(
-                        Color(0xFF1B1B2F).copy(alpha = 0.92f),     // dark blue card
+                        Color(0xFF1B1B2F).copy(alpha = 0.92f),
                         RoundedCornerShape(28.dp)
                     )
                     .border(
                         width = 3.dp,
-                        color = Color(0xFFFF5252),                  // red border
+                        color = Color(0xFFFF5252),
                         shape = RoundedCornerShape(28.dp)
                     )
                     .padding(horizontal = 48.dp, vertical = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                // Big title.
                 Text(
                     text = "\uD83D\uDC80 GAME OVER",
                     color = Color(0xFFFF5252),
                     fontSize = 36.sp
                 )
 
-                // Final score, big and white.
                 Text(
-                    text = "Score: $score",
+                    text = "Score: $currentScore",
                     color = Color.White,
                     fontSize = 32.sp,
                     modifier = Modifier.padding(top = 8.dp)
                 )
 
-                // New record message, or the current best.
-                val beatRecord = score > 0 && score >= highScore
+                val isNewBest = currentScore > 0 && currentScore >= bestScore
                 Text(
-                    text = if (beatRecord) "\uD83D\uDE0E New high score!"
-                    else "\uD83C\uDFC6 Best: $highScore",
+                    text = if (isNewBest) "\uD83D\uDE0E New high score!"
+                    else "\uD83C\uDFC6 Best: $bestScore",
                     color = Color.Yellow,
                     fontSize = 26.sp,
                     modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
                 )
 
-                // Big green play again button.
                 Button(
-                    onClick = {
-                        sounds.playUiTouch()
-                        restartGame()
-                    },
+                    onClick = { restartGame() },
                     modifier = Modifier.height(56.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF4CAF50),
@@ -610,48 +547,43 @@ fun CameraPreview(
 
 // ---------------------------------------------------------------------
 // CameraView
-//   Your old camera setup code, in its own function.
-//   NEW: it also tells the frame grabber when the phone is turned
-//   (for example landscape flipped upside down), so MediaPipe always
-//   gets an upright picture.
+//   Camera setup. Also tells the frame grabber when the phone rotates,
+//   so MediaPipe always gets an upright picture.
 // ---------------------------------------------------------------------
 @Composable
 private fun CameraView(helper: HandLandmarkerHelper) {
 
     val context = LocalContext.current
 
-    // The camera picture view and the frame grabber are created once and kept,
-    // so the rotation listener below can reach them.
     val previewView = remember { PreviewView(context) }
 
-    val analyzer = remember {
+    val imageAnalyzer = remember {
         ImageAnalysis.Builder()
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
             .build()
     }
 
-    // Watches the screen rotation and passes it to the frame grabber.
+    // Watches screen rotation and passes it to the frame grabber.
     DisposableEffect(Unit) {
 
         val displayManager =
             context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
 
-        val listener = object : DisplayManager.DisplayListener {
+        val displayListener = object : DisplayManager.DisplayListener {
             override fun onDisplayAdded(displayId: Int) {}
             override fun onDisplayRemoved(displayId: Int) {}
             override fun onDisplayChanged(displayId: Int) {
                 val display = previewView.display
                 if (display != null) {
-                    analyzer.targetRotation = display.rotation
+                    imageAnalyzer.targetRotation = display.rotation
                 }
             }
         }
 
-        displayManager.registerDisplayListener(listener, null)
+        displayManager.registerDisplayListener(displayListener, null)
 
-        // Stop watching when this screen is closed.
-        onDispose { displayManager.unregisterDisplayListener(listener) }
+        onDispose { displayManager.unregisterDisplayListener(displayListener) }
     }
 
     AndroidView(
@@ -664,19 +596,17 @@ private fun CameraView(helper: HandLandmarkerHelper) {
 
                 val cameraProvider = cameraProviderFuture.get()
 
-                // The live camera picture.
                 val preview = Preview.Builder().build()
                 preview.surfaceProvider = previewView.surfaceProvider
 
-                // Make sure the frame grabber starts with the current screen rotation.
-                previewView.display?.let { analyzer.targetRotation = it.rotation }
+                previewView.display?.let { imageAnalyzer.targetRotation = it.rotation }
 
-                analyzer.setAnalyzer(
+                imageAnalyzer.setAnalyzer(
                     ContextCompat.getMainExecutor(ctx),
                     HandAnalyzer(helper)
                 )
 
-                // Front camera (selfie). Use DEFAULT_BACK_CAMERA for the back one.
+                // Front camera. Use DEFAULT_BACK_CAMERA for the back camera.
                 val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
                 cameraProvider.unbindAll()
@@ -685,7 +615,7 @@ private fun CameraView(helper: HandLandmarkerHelper) {
                     ctx as LifecycleOwner,
                     cameraSelector,
                     preview,
-                    analyzer
+                    imageAnalyzer
                 )
 
             }, ContextCompat.getMainExecutor(ctx))
@@ -697,54 +627,46 @@ private fun CameraView(helper: HandLandmarkerHelper) {
 
 
 // ---------------------------------------------------------------------
-// randomBallX
-//   Picks a random horizontal spot for a new ball,
-//   keeping the whole circle inside the screen.
+// randomItemX
+//   Random horizontal spot for a new item, keeping it fully on screen.
 // ---------------------------------------------------------------------
-private fun randomBallX(width: Int): Float {
-    val min = BALL_RADIUS * 1.4f          // keeps even the big bomb fully on screen
-    val max = width - BALL_RADIUS * 1.4f
-    return Random.nextFloat() * (max - min) + min
+private fun randomItemX(screenWidthPx: Int): Float {
+    val minX = FRUIT_BASE_RADIUS_PX * 1.4f
+    val maxX = screenWidthPx - FRUIT_BASE_RADIUS_PX * 1.4f
+    return Random.nextFloat() * (maxX - minX) + minX
 }
 
 
 // ---------------------------------------------------------------------
-// isBallTouched
-//   Returns true if ANY of the 21 points of ANY detected hand
-//   is inside (or very near) the ball.
-//
-//   MediaPipe gives each point as 0.0 to 1.0 (a fraction of the picture),
-//   so we multiply by the screen size to get real pixels.
+// isItemTouchedByHand
+//   True if ANY of the 21 points of ANY hand is inside (or near) the item.
+//   MediaPipe gives 0.0 to 1.0 fractions, so we multiply by the screen size.
 //   X is flipped (1 - x) because the front camera is mirrored.
-//   This is the same math HandOverlay uses, so the dots and the ball line up.
 // ---------------------------------------------------------------------
-private fun isBallTouched(
+private fun isItemTouchedByHand(
     result: HandLandmarkerResult?,
-    ballX: Float,
-    ballY: Float,
+    itemX: Float,
+    itemY: Float,
     radius: Float,
     width: Int,
     height: Int
 ): Boolean {
 
-    // No hand detected right now.
     if (result == null) return false
 
-    val reach = radius + CATCH_EXTRA
+    val reachPx = radius + CATCH_EXTRA_REACH_PX
 
-    for (hand in result.landmarks()) {          // each hand (max 2)
-        for (point in hand) {                   // each of its 21 points
+    for (hand in result.landmarks()) {
+        for (point in hand) {
 
-            val pointX = (1f - point.x()) * width
-            val pointY = point.y() * height
+            val pointXPx = (1f - point.x()) * width
+            val pointYPx = point.y() * height
 
-            // Distance between the point and the ball center (Pythagoras).
-            val dx = pointX - ballX
-            val dy = pointY - ballY
+            val dx = pointXPx - itemX
+            val dy = pointYPx - itemY
             val distanceSquared = dx * dx + dy * dy
 
-            // Compare squared values to avoid a slow square root.
-            if (distanceSquared <= reach * reach) {
+            if (distanceSquared <= reachPx * reachPx) {
                 return true
             }
         }
@@ -756,8 +678,8 @@ private fun isBallTouched(
 
 // ---------------------------------------------------------------------
 // isHandInCircle
-//   Returns true if ANY point of ANY hand is inside a circle on the screen.
-//   Same pixel + mirror math as isBallTouched. Used for the round restart button.
+//   True if ANY point of ANY hand is inside a circle on screen.
+//   Same pixel and mirror math as isItemTouchedByHand. Used by the restart button.
 // ---------------------------------------------------------------------
 private fun isHandInCircle(
     result: HandLandmarkerResult?,
@@ -773,12 +695,11 @@ private fun isHandInCircle(
     for (hand in result.landmarks()) {
         for (point in hand) {
 
-            val pointX = (1f - point.x()) * width
-            val pointY = point.y() * height
+            val pointXPx = (1f - point.x()) * width
+            val pointYPx = point.y() * height
 
-            // Distance from the circle center (Pythagoras, squared to skip the root).
-            val dx = pointX - centerX
-            val dy = pointY - centerY
+            val dx = pointXPx - centerX
+            val dy = pointYPx - centerY
 
             if (dx * dx + dy * dy <= radius * radius) {
                 return true

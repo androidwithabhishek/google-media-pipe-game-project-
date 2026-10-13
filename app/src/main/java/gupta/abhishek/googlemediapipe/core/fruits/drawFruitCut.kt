@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.lerp
-import gupta.abhishek.googlemediapipe.core.fruit_type.FruitType
+import gupta.abhishek.googlemediapipe.core.fruits.FruitType
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin

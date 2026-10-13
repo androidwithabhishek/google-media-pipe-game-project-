@@ -9,6 +9,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipPath
+import gupta.abhishek.googlemediapipe.core.fruits.FruitType
+import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -21,25 +23,25 @@ object Orange {
         juiceColor = Color(0xFFFFA726),
         insideColor = Color(0xFFFFB74D),
         seedColor = Color(0xFFFFF3E0),
-        seedCount = 0, sizeScale = 1.09f,
+        seedCount = 0, sizeScale = 1f,
         draw = { radius -> drawOrange(radius) }
     )
 
+    // Whole orange, as it looks before it is cut.
     private fun DrawScope.drawOrange(r: Float) {
 
-        // Round body.
         val body = Path().apply {
             addOval(Rect(center = Offset.Zero, radius = r))
         }
 
-        // Orange skin: lighter top-left, deeper orange at the edges.
+        // Skin: soft light from the top-left, deeper orange at the edges.
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    Color(0xFFFFB74D),
+                    Color(0xFFFFCC80),
                     Color(0xFFFB8C00),
                     Color(0xFFE65100),
-                    Color(0xFFBF360C)
+                    Color(0xFFB23B00)
                 ),
                 center = Offset(-0.35f * r, -0.35f * r),
                 radius = 1.6f * r
@@ -49,60 +51,58 @@ object Orange {
         )
 
         clipPath(body) {
-            // Fine pores spread in a golden-angle spiral, like real orange peel.
-            for (i in 0 until 60) {
+            // Fine peel pores in a golden-angle spiral, dense and small.
+            for (i in 0 until 90) {
                 val angle = i * 2.39996f
-                val distance = r * 0.92f * sqrt((i + 0.5f) / 60f)
-                val center = Offset(cos(angle) * distance, sin(angle) * distance)
+                val distance = r * 0.95f * sqrt((i + 0.5f) / 90f)
+                val c = Offset(cos(angle) * distance, sin(angle) * distance)
 
-                // Dark pore dot.
                 drawCircle(
-                    color = Color(0xFFBF360C).copy(alpha = 0.22f),
-                    radius = r * 0.028f,
-                    center = center
+                    color = Color(0xFF8D2C00).copy(alpha = 0.18f),
+                    radius = r * 0.02f,
+                    center = c
                 )
-                // Light speck beside it for a bumpy look.
                 drawCircle(
-                    color = Color(0xFFFFCC80).copy(alpha = 0.35f),
-                    radius = r * 0.012f,
-                    center = Offset(center.x + r * 0.02f, center.y - r * 0.02f)
+                    color = Color(0xFFFFE0B2).copy(alpha = 0.25f),
+                    radius = r * 0.008f,
+                    center = Offset(c.x + r * 0.015f, c.y - r * 0.015f)
                 )
             }
 
-            // Soft shade toward the bottom-right for roundness.
+            // Shade toward the bottom-right for roundness.
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.3f)),
-                    center = Offset(0.25f * r, 0.25f * r),
-                    radius = 1.3f * r
+                    colors = listOf(Color.Transparent, Color(0xFF3E1500).copy(alpha = 0.4f)),
+                    center = Offset(0.3f * r, 0.3f * r),
+                    radius = 1.2f * r
                 ),
                 radius = r,
                 center = Offset.Zero
             )
 
-            // Glossy highlight on the upper left.
+            // Soft gloss on the upper left.
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color.White.copy(alpha = 0.5f), Color.Transparent),
+                    colors = listOf(Color.White.copy(alpha = 0.45f), Color.Transparent),
                     center = Offset(-0.42f * r, -0.42f * r),
-                    radius = 0.38f * r
+                    radius = 0.35f * r
                 ),
-                radius = 0.38f * r,
+                radius = 0.35f * r,
                 center = Offset(-0.42f * r, -0.42f * r)
             )
         }
 
         // Shallow dimple at the top where the fruit was attached.
         drawOval(
-            color = Color(0xFFBF360C).copy(alpha = 0.35f),
-            topLeft = Offset(-0.16f * r, -0.9f * r),
-            size = Size(0.32f * r, 0.16f * r)
+            color = Color(0xFF8D2C00).copy(alpha = 0.3f),
+            topLeft = Offset(-0.14f * r, -0.9f * r),
+            size = Size(0.28f * r, 0.14f * r)
         )
 
         // Green stem button.
         drawOval(
             brush = Brush.radialGradient(
-                colors = listOf(Color(0xFF9CCC65), Color(0xFF558B2F)),
+                colors = listOf(Color(0xFFAED581), Color(0xFF558B2F)),
                 center = Offset(-0.03f * r, -0.97f * r),
                 radius = 0.14f * r
             ),
@@ -134,5 +134,51 @@ object Orange {
             strokeWidth = 0.02f * r,
             cap = StrokeCap.Round
         )
+    }
+
+    // Cut orange: peel ring, white pith, juice segments, and a core.
+    // Call this from the game when the fruit is shown cut in half.
+    fun DrawScope.drawCut(r: Float) {
+        val segments = 10
+        val step = 2f * PI.toFloat() / segments
+
+        // Peel ring.
+        drawCircle(color = Color(0xFFEF6C00), radius = r)
+
+        // White pith.
+        drawCircle(color = Color(0xFFFFF3E0), radius = r * 0.9f)
+
+        // Flesh base.
+        drawCircle(color = Color(0xFFFFB74D), radius = r * 0.82f)
+
+        // Juice vesicles: small rounded sacs inside each segment.
+        for (i in 0 until segments) {
+            val base = i * step + step / 2f
+            for (k in -1..1) {
+                val a = base + k * 0.1f
+                val c = Offset(cos(a) * r * 0.46f, sin(a) * r * 0.46f)
+                drawCircle(color = Color(0xFFFFA726), radius = r * 0.12f, center = c)
+                drawCircle(
+                    color = Color.White.copy(alpha = 0.35f),
+                    radius = r * 0.035f,
+                    center = Offset(c.x - r * 0.03f, c.y - r * 0.03f)
+                )
+            }
+        }
+
+        // Segment membranes (pith lines from the center to the rim).
+        for (i in 0 until segments) {
+            val a = i * step
+            drawLine(
+                color = Color(0xFFFFF3E0),
+                start = Offset.Zero,
+                end = Offset(cos(a) * r * 0.82f, sin(a) * r * 0.82f),
+                strokeWidth = r * 0.05f,
+                cap = StrokeCap.Round
+            )
+        }
+
+        // Central core.
+        drawCircle(color = Color(0xFFFFF3E0), radius = r * 0.08f)
     }
 }

@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.core.fruit_type
+package gupta.abhishek.googlemediapipe.core.fruits
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope

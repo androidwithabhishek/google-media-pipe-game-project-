@@ -1,9 +1,8 @@
-import gupta.abhishek.googlemediapipe.core.fruit_type.FruitType
+import gupta.abhishek.googlemediapipe.core.fruits.FruitType
 
 
 
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -24,8 +23,8 @@ object Pomegranate {
         juiceColor = Color(0xFFC90036),
         insideColor = Color(0xFFFFD6DF),
         seedColor = Color(0xFFE7194F),
-        seedCount = 16,
-        sizeScale = 1.4f,
+        seedCount = 100,
+        sizeScale = 1.1f,
         draw = { radius -> drawPomegranate(radius) }
     )
 

@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation
+package gupta.abhishek.googlemediapipe.core.fruits
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
+import gupta.abhishek.googlemediapipe.presentation.BombType
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.exp
