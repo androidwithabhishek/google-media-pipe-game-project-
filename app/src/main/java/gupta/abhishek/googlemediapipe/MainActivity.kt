@@ -1,27 +1,22 @@
 package gupta.abhishek.googlemediapipe
 
 import android.Manifest
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
-import gupta.abhishek.googlemediapipe.presentation.CameraPreview
+
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandLandmarkerHelper
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandOverlay
+import gupta.abhishek.googlemediapipe.presentation.CameraPreview
 
 
 class MainActivity : ComponentActivity() {
@@ -42,6 +37,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Always landscape. SENSOR_LANDSCAPE = landscape both ways up (flip the phone
+        // 180 degrees and it follows), but it never goes to portrait.
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
 
         cameraPermissionLauncher.launch(
             Manifest.permission.CAMERA
@@ -77,6 +76,7 @@ class MainActivity : ComponentActivity() {
 
                 CameraPreview(
                     helper = helper,
+                    handResult = handResult,   // game needs the hand points
                     modifier = Modifier.fillMaxSize()
                 )
 
@@ -84,24 +84,6 @@ class MainActivity : ComponentActivity() {
                     result = handResult,
                     modifier = Modifier.fillMaxSize()
                 )
-
-                if (handResult?.landmarks()?.isEmpty() != false) {
-
-                    Text(
-                        text = "Show your hand to the camera",
-                        color = Color.White,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .background(
-                                Color.Black.copy(alpha = 0.6f),
-                                RoundedCornerShape(12.dp)
-                            )
-                            .padding(
-                                horizontal = 20.dp,
-                                vertical = 12.dp
-                            )
-                    )
-                }
             }
         }
     }
