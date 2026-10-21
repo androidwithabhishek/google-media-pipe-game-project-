@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation
+package gupta.abhishek.googlemediapipe.core.fruit_type
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -17,14 +17,13 @@ object Apple {
     val type = FruitType(
         name = "apple",
         skinColor = Color(0xFFD32F2F),
-        juiceColor = Color(0xC9FFE3E3),
-        insideColor = Color(0xFFFFD6DF),
+        juiceColor = Color(0xFFFF706D),
+        insideColor = Color(0xFFFDC3D0),
         seedColor = Color(0xFF4E342E),
         seedCount = 5,
-        sizeScale = 1f,
+        sizeScale = 1.2f,
         draw = { radius -> drawApple(radius) }
     )
-
     private fun DrawScope.drawApple(r: Float) {
 
         // Apple body: wide shoulders and a natural dip at the base.

@@ -3,8 +3,11 @@ package gupta.abhishek.googlemediapipe.core.fruits
 import gupta.abhishek.googlemediapipe.core.fruit_type.Cherry
 import gupta.abhishek.googlemediapipe.core.fruit_type.Mango
 import gupta.abhishek.googlemediapipe.core.fruit_type.Orange
-import gupta.abhishek.googlemediapipe.presentation.Apple
-import gupta.abhishek.googlemediapipe.presentation.Banana
+import gupta.abhishek.googlemediapipe.core.fruit_type.Pear
+
+import gupta.abhishek.googlemediapipe.core.fruit_type.Pomegranate
+import gupta.abhishek.googlemediapipe.core.fruit_type.Apple
+import gupta.abhishek.googlemediapipe.core.fruit_type.Banana
 
 
 object Fruits {
@@ -17,6 +20,7 @@ object Fruits {
         Mango.type,
         Banana.type,
         Pomegranate.type,
-        Cherry.type
+        Cherry.type,
+        Pear.type
     )
 }

@@ -1,5 +1,5 @@
 
-package gupta.abhishek.googlemediapipe.presentation
+package gupta.abhishek.googlemediapipe.core.fruit_type
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
