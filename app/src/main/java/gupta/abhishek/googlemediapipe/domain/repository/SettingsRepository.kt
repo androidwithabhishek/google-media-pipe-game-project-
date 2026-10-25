@@ -14,4 +14,7 @@ interface SettingsRepository {
 
     // Remembers that the one-time hand instruction was shown.
     suspend fun markHandInstructionSeen()
+
+    // Flips the camera on or off, using the value saved in the database.
+
 }

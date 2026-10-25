@@ -61,4 +61,8 @@ internal const val CONFETTI_GRAVITY = 1.2f         // how fast the pieces fall (
 
 internal const val SHOW_HEART_BACKGROUND = false    // false = hearts without the dark box behind them
 
-internal const val STARTING_LIVES = 4
+internal const val STARTING_LIVES = 1
+
+internal const val SCORE_ICON_RATIO = 1.3f    // apple size as a share of the score text size
+
+internal const val SCORE_TEXT_OFFSET_Y_DP = 6f    // how far the score moves down (try 4f to 10f)

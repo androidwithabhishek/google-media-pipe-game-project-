@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation
+package gupta.abhishek.googlemediapipe.presentation.screen
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -31,6 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import gupta.abhishek.googlemediapipe.core.fruits.FruitType
 import gupta.abhishek.googlemediapipe.core.fruits.Fruits
+import gupta.abhishek.googlemediapipe.presentation.CUT_DURATION
+import gupta.abhishek.googlemediapipe.presentation.FruitCut
+import gupta.abhishek.googlemediapipe.presentation.drawFruitCut
 
 // Test-only screen: shows ONE fruit big in the middle, so you can look at each fruit.
 // Tap the fruit or press Cut to see its cut animation. Not used by the real game.
@@ -50,7 +53,7 @@ fun FruitTestScreen(onGoToGame: () -> Unit = {}) {
     var index by remember { mutableStateOf(0) }
     var spinAngle by remember { mutableStateOf(0f) }
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
-    val cuts = remember { mutableStateListOf<FruitCut>() }
+    val cuts = remember { mutableStateListOf<gupta.abhishek.googlemediapipe.presentation.FruitCut>() }
     var paused by remember { mutableStateOf(false) }
     val fruit = fruits[index]
 

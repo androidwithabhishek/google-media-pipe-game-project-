@@ -13,7 +13,7 @@ import androidx.compose.runtime.setValue
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
 import dagger.hilt.android.AndroidEntryPoint
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandLandmarkerHelper
-import gupta.abhishek.googlemediapipe.presentation.FruitTestScreen
+import gupta.abhishek.googlemediapipe.presentation.screen.FruitTestScreen
 
 import gupta.abhishek.googlemediapipe.presentation.screen.MainScreen
 

@@ -9,9 +9,13 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -52,8 +56,13 @@ import gupta.abhishek.googlemediapipe.core.game_assets.drawHandIcon
 
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.style.TextAlign
 import gupta.abhishek.googlemediapipe.R
+import gupta.abhishek.googlemediapipe.core.fonts.GameFonts
 
 
 import gupta.abhishek.googlemediapipe.core.game_assets.drawHeart
@@ -68,33 +77,36 @@ import gupta.abhishek.googlemediapipe.core.game_assets.drawYellowRoundButton
 //   Big bold text with a dark shadow, like the score text in the reference picture.
 // ---------------------------------------------------------------------
 @Composable
-private fun GlossyText(text: String, fontSize: TextUnit, color: Color) {
+private fun GlossyText(
+    text: String,
+    fontSize: TextUnit,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
     Text(
         text = text,
+        modifier = modifier,
         color = color,
         fontSize = fontSize,
-        fontWeight = FontWeight.Black,
+        fontFamily = GameFonts.JungleRoarFont,
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Center,
+        lineHeight = fontSize,
         style = TextStyle(
             shadow = Shadow(
                 color = Color.Black.copy(alpha = 0.75f),
                 offset = Offset(3f, 4f),
                 blurRadius = 6f
+            ),
+            platformStyle = PlatformTextStyle(includeFontPadding = false),
+            lineHeightStyle = LineHeightStyle(
+                alignment = LineHeightStyle.Alignment.Center,
+                trim = LineHeightStyle.Trim.Both
             )
         )
     )
 }
 
-// ---------------------------------------------------------------------
-// Game3DButton
-//   A round button drawn with Canvas: the 3D yellow button with an icon on top.
-//   Used for Replay, Play and Pause.
-//
-//   sizeDp   -> width and height of the button
-//   progress -> 0 to 1. Above 0 a green ring fills around the button
-//               (used while a hand is held on it)
-//   onClick  -> what happens when it is touched
-//   icon     -> which icon to draw on it (drawReplayIcon, drawPlayIcon, drawPauseIcon)
-// ---------------------------------------------------------------------
 @Composable
 internal fun Game3DButton(
     sizeDp: Dp,
@@ -153,9 +165,7 @@ internal fun BoxScope.GameHud(
     handControlEnabled: Boolean,
     onHandToggle: () -> Unit
 ) {
-    // The hand icon from the Material icon library (Icons.Filled.PanTool).
-//    val handOnPainter = rememberVectorPainter(Icons.Filled.PanTool)
-//    val handOffPainter = rememberVectorPainter(Icons.Filled.DoNotTouch)
+
 
     val handOnPainter = rememberVectorPainter(Icons.Filled.CameraAlt)
     val handOffPainter = rememberVectorPainter(Icons.Filled.NoPhotography)
@@ -211,45 +221,35 @@ private fun BoxScope.ScoreCorner(currentScore: Int, bestScore: Int) {
 
         Row(verticalAlignment = Alignment.CenterVertically) {
 
-            
-
-//            HERE IS THE HALF MF APPLE
-
+            val appleSize = with(LocalDensity.current) {
+                SCORE_TEXT_SIZE_SP.sp.toDp() * SCORE_ICON_RATIO
+            }
             Image(
                 painter = painterResource(id = R.drawable.half_apple),
                 contentDescription = "Score",
-                modifier = Modifier.size(SCORE_ICON_SIZE_DP.dp),
+                modifier = Modifier.size(appleSize),
                 contentScale = ContentScale.Fit
             )
-
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(5.dp))
 
             GlossyText(
                 text = "$currentScore",
                 fontSize = SCORE_TEXT_SIZE_SP.sp,
-                color = Color(0xFF69F0AE)
+                color = Color(0xFF69F0AE),
+                modifier = Modifier.offset(y = SCORE_TEXT_OFFSET_Y_DP.dp)
             )
         }
 
-        // Sunglasses while you are at the record, trophy otherwise.
-        val isAtBestScore = currentScore > 0 && currentScore >= bestScore
-        val bestEmoji = if (isAtBestScore) "\uD83D\uDE0E" else "\uD83C\uDFC6"
-
         GlossyText(
-            text = "$bestEmoji Best: $bestScore",
+            text = "Best: $bestScore",
             fontSize = BEST_TEXT_SIZE_SP.sp,
             color = Color(0xFFFFD54F)
         )
     }
 }
 
-// ---------------------------------------------------------------------
-// LivesBar
-//   Top center: one heart per starting life.
-//   A red shiny heart = a life you still have. A dark empty heart = a life you lost.
-//   Under the hearts a small red hint appears when no hand is seen by the camera
-//   (turn it on or off with SHOW_HAND_HINT in GameSettings.kt).
-// ---------------------------------------------------------------------
+
+
 @Composable
 private fun BoxScope.LivesBar(livesLeft: Int, handResult: HandLandmarkerResult?) {
 
@@ -299,11 +299,7 @@ private fun BoxScope.LivesBar(livesLeft: Int, handResult: HandLandmarkerResult?)
     }
 }
 
-// ---------------------------------------------------------------------
-// PauseOverlay
-//   Shown while the game is paused: the screen goes dark, with big Play and Replay buttons.
-//   It also catches touches, so nothing underneath can be tapped by accident.
-// ---------------------------------------------------------------------
+
 @Composable
 internal fun BoxScope.PauseOverlay(
     onResume: () -> Unit,
@@ -345,13 +341,6 @@ internal fun BoxScope.PauseOverlay(
     }
 }
 
-// ---------------------------------------------------------------------
-// RestartButton
-//   The big replay button in the top right corner. Shown on game over only (the caller decides).
-//   It is its OWN button, different from the yellow 3D ones: see-through glass with a gold
-//   ring and a big gold replay arrow. A green ring fills around it while your hand is held on it.
-//   Size and margins: RESTART_BUTTON_* in GameSettings.kt.
-// ---------------------------------------------------------------------
 @Composable
 internal fun BoxScope.RestartButton(
     restartHoldProgress: Float,
@@ -414,30 +403,31 @@ internal fun BoxScope.GameOverCard(
                 shape = RoundedCornerShape(28.dp)
             )
             .padding(horizontal = 48.dp, vertical = 20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)   // same gap between every line
     ) {
 
-        Text(
+        GlossyText(
             text = "\uD83D\uDC80 GAME OVER",
-            color = Color(0xFFFF5252),
-            fontSize = 36.sp
+            fontSize = 36.sp,
+            color = Color(0xFFFF5252)
         )
 
-        Text(
+        GlossyText(
             text = "Score: $currentScore",
-            color = Color.White,
             fontSize = 32.sp,
-            modifier = Modifier.padding(top = 8.dp)
+            color = Color.White
         )
 
         val isNewBest = currentScore > 0 && currentScore >= bestScore
-        Text(
+        GlossyText(
             text = if (isNewBest) "\uD83D\uDE0E New high score!"
             else "\uD83C\uDFC6 Best: $bestScore",
-            color = Color.Yellow,
             fontSize = 26.sp,
-            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+            color = Color.Yellow
         )
+
+        Spacer(modifier = Modifier.height(4.dp))
 
         Game3DButton(
             sizeDp = 88.dp,
