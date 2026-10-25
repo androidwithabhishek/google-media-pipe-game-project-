@@ -94,3 +94,33 @@ internal fun isHandInCircle(
 
     return false
 }
+
+// ---------------------------------------------------------------------
+// isSegmentTouchingItem
+//   True if a finger swipe (a straight line from one point to the next)
+//   passes within reachPx of the item's center. Used for cutting by touch.
+// ---------------------------------------------------------------------
+internal fun isSegmentTouchingItem(
+    fromX: Float,
+    fromY: Float,
+    toX: Float,
+    toY: Float,
+    itemX: Float,
+    itemY: Float,
+    reachPx: Float
+): Boolean {
+    val dx = toX - fromX
+    val dy = toY - fromY
+    val lengthSquared = dx * dx + dy * dy
+
+    // Closest point on the swipe to the item center (t goes from 0 = start to 1 = end).
+    val t = if (lengthSquared == 0f) 0f
+    else (((itemX - fromX) * dx + (itemY - fromY) * dy) / lengthSquared).coerceIn(0f, 1f)
+
+    val closestX = fromX + dx * t
+    val closestY = fromY + dy * t
+    val ex = closestX - itemX
+    val ey = closestY - itemY
+    return ex * ex + ey * ey <= reachPx * reachPx
+}
+

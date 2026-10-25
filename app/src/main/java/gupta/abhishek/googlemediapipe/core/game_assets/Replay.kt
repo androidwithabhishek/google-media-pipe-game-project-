@@ -8,6 +8,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import com.google.ar.core.dependencies.f
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -31,48 +33,49 @@ fun DrawScope.drawReplayIcon(r: Float) {
 // ---------------------------------------------------------------------
 internal fun DrawScope.drawReplayArrow(r: Float, color: Color) {
 
-    val arcRadius = 0.40f * r
+    // How far the whole icon turns. Positive = clockwise (leans right).
+    // Try 15f (a little), 30f (more), or -15f to lean left.
+    val ICON_ROTATION_DEGREES = 100f
 
-    // The open circle. Angles: 0 = right, 90 = down, so -50 is the upper right.
-    // It starts at -50 degrees and goes 280 degrees clockwise, ending at 230 (upper left).
-    drawArc(
-        color = color,
-        startAngle = -50f,
-        sweepAngle = 280f,
-        useCenter = false,
-        topLeft = Offset(-arcRadius, -arcRadius),
-        size = Size(arcRadius * 2f, arcRadius * 2f),
-        style = Stroke(width = 0.15f * r, cap = StrokeCap.Round)
-    )
+    // Turn the whole icon around the button center (0, 0).
+    rotate(degrees = ICON_ROTATION_DEGREES, pivot = Offset.Zero) {
 
-    // The arrow head sits on the end of the arc (230 degrees).
-    val endAngle = 230f * (PI.toFloat() / 180f)
+        val arcRadius = 0.40f * r
 
-    // Direction pointing away from the circle center (radial)...
-    val radialX = cos(endAngle)
-    val radialY = sin(endAngle)
+        // The open circle, starting at the upper right and going clockwise.
+        drawArc(
+            color = color,
+            startAngle = -50f,
+            sweepAngle = 280f,
+            useCenter = false,
+            topLeft = Offset(-arcRadius, -arcRadius),
+            size = Size(arcRadius * 2f, arcRadius * 2f),
+            style = Stroke(width = 0.15f * r, cap = StrokeCap.Round)
+        )
 
-    // ...and the direction the arc is travelling (clockwise = 90 degrees turned).
-    val travelX = -sin(endAngle)
-    val travelY = cos(endAngle)
+        // Where the arc ends (230 degrees, upper left) and the directions around it.
+        val endAngle = 230f * (PI.toFloat() / 180f)
+        val radialX = cos(endAngle)
+        val radialY = sin(endAngle)
+        val travelX = -sin(endAngle)
+        val travelY = cos(endAngle)
+        val endX = radialX * arcRadius
+        val endY = radialY * arcRadius
 
-    // The exact point where the arc ends.
-    val endX = radialX * arcRadius
-    val endY = radialY * arcRadius
+        // The arrow head.
+        val head = Path().apply {
+            moveTo(endX + travelX * 0.30f * r, endY + travelY * 0.30f * r)
+            lineTo(endX + radialX * 0.26f * r, endY + radialY * 0.26f * r)
+            lineTo(endX - radialX * 0.26f * r, endY - radialY * 0.26f * r)
+            close()
+        }
+        drawPath(path = head, color = color)
 
-    // A triangle: the tip is ahead of the arc end, the two back corners are on both sides of it.
-    val head = Path().apply {
-        moveTo(endX + travelX * 0.30f * r, endY + travelY * 0.30f * r)
-        lineTo(endX + radialX * 0.26f * r, endY + radialY * 0.26f * r)
-        lineTo(endX - radialX * 0.26f * r, endY - radialY * 0.26f * r)
-        close()
+        // Rounded edges on the arrow head.
+        drawPath(
+            path = head,
+            color = color,
+            style = Stroke(width = 0.06f * r, join = StrokeJoin.Round)
+        )
     }
-    drawPath(path = head, color = color)
-
-    // Same triangle again as a thick outline with round corners = softly rounded arrow head.
-    drawPath(
-        path = head,
-        color = color,
-        style = Stroke(width = 0.06f * r, join = StrokeJoin.Round)
-    )
 }

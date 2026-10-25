@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.core.Delegate
+import com.google.mediapipe.tasks.vision.core.ImageProcessingOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
@@ -18,9 +19,7 @@ class HandLandmarkerHelper(
     private var handLandmarker: HandLandmarker? = null
 
     fun setup() {
-
         try {
-
             val baseOptions = BaseOptions.builder()
                 .setModelAssetPath("hand_landmarker.task")
                 .setDelegate(Delegate.CPU)
@@ -33,36 +32,23 @@ class HandLandmarkerHelper(
                 .setMinHandDetectionConfidence(0.5f)
                 .setMinHandPresenceConfidence(0.5f)
                 .setMinTrackingConfidence(0.5f)
-                .setResultListener { result, _ ->
-                    onResult(result)
-                }
-                .setErrorListener { error ->
-                    onError(error.message ?: "Unknown MediaPipe error")
-                }
+                .setResultListener { result, _ -> onResult(result) }
+                .setErrorListener { error -> onError(error.message ?: "Unknown MediaPipe error") }
                 .build()
 
-            handLandmarker =
-                HandLandmarker.createFromOptions(
-                    context,
-                    options
-                )
-
+            handLandmarker = HandLandmarker.createFromOptions(context, options)
         } catch (e: Exception) {
-            onError(
-                e.message ?: "Unable to initialize MediaPipe"
-            )
+            onError(e.message ?: "Unable to initialize MediaPipe")
         }
     }
 
-    fun detect(bitmap: Bitmap, timestamp: Long) {
-
-        val image = BitmapImageBuilder(bitmap)
+    // rotationDegrees: 0, 90, 180 or 270. MediaPipe turns the picture upright itself.
+    fun detect(bitmap: Bitmap, rotationDegrees: Int, timestamp: Long) {
+        val image = BitmapImageBuilder(bitmap).build()
+        val options = ImageProcessingOptions.builder()
+            .setRotationDegrees(rotationDegrees)
             .build()
-
-        handLandmarker?.detectAsync(
-            image,
-            timestamp
-        )
+        handLandmarker?.detectAsync(image, options, timestamp)
     }
 
     fun close() {

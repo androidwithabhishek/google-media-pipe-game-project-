@@ -1,6 +1,7 @@
 package gupta.abhishek.googlemediapipe.presentation.screen.game_logic
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,6 +18,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.DoNotTouch
+import androidx.compose.material.icons.filled.NoPhotography
+import androidx.compose.material.icons.filled.PanTool
+import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.filled.VideocamOff
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -39,7 +47,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
 import gupta.abhishek.googlemediapipe.core.game_assets.drawEmptyHeart
-import gupta.abhishek.googlemediapipe.core.game_assets.drawHalfApple
+
+import gupta.abhishek.googlemediapipe.core.game_assets.drawHandIcon
+
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import gupta.abhishek.googlemediapipe.R
+
 
 import gupta.abhishek.googlemediapipe.core.game_assets.drawHeart
 import gupta.abhishek.googlemediapipe.core.game_assets.drawPauseIcon
@@ -121,10 +136,10 @@ internal fun Game3DButton(
 
 // ---------------------------------------------------------------------
 // GameHud
-//   Everything you see on top of the game while playing, laid out like the reference:
-//     top left   -> fruit picture + Score, with Best under it
-//     top center -> hearts (one per life)
-//     bottom left  -> small pause button
+//   Everything you see on top of the game while playing:
+//     top left      -> fruit picture + Score, with Best under it
+//     top center    -> hearts (one per life)
+//     bottom left   -> hand button (on/off) with the pause button under it
 // ---------------------------------------------------------------------
 @Composable
 internal fun BoxScope.GameHud(
@@ -134,22 +149,50 @@ internal fun BoxScope.GameHud(
     handResult: HandLandmarkerResult?,
     isPaused: Boolean,
     showPauseButton: Boolean,
-    onPauseToggle: () -> Unit
+    onPauseToggle: () -> Unit,
+    handControlEnabled: Boolean,
+    onHandToggle: () -> Unit
 ) {
+    // The hand icon from the Material icon library (Icons.Filled.PanTool).
+//    val handOnPainter = rememberVectorPainter(Icons.Filled.PanTool)
+//    val handOffPainter = rememberVectorPainter(Icons.Filled.DoNotTouch)
+
+    val handOnPainter = rememberVectorPainter(Icons.Filled.CameraAlt)
+    val handOffPainter = rememberVectorPainter(Icons.Filled.NoPhotography)
+
     ScoreCorner(currentScore = currentScore, bestScore = bestScore)
 
     LivesBar(livesLeft = livesLeft, handResult = handResult)
 
     if (showPauseButton) {
-        Game3DButton(
-            sizeDp = PAUSE_BUTTON_SIZE_DP.dp,
+        // Bottom left column: hand button on top, pause button under it.
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(start = PAUSE_BUTTON_MARGIN_DP.dp, bottom = PAUSE_BUTTON_MARGIN_DP.dp),
-            onClick = onPauseToggle,
-            // While paused the same button shows Play, so you can tap it to continue.
-            icon = { r -> if (isPaused) drawPlayIcon(r) else drawPauseIcon(r) }
-        )
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(HAND_BUTTON_GAP_DP.dp)
+        ) {
+            Game3DButton(
+                sizeDp = HAND_BUTTON_SIZE_DP.dp,
+                onClick = onHandToggle,
+                // Red slash when hand control is off (camera off, touch only).
+                icon = { r ->
+                    if (handControlEnabled) {
+                        drawHandIcon(handOnPainter, r, tint = Color(0xFF3E2723))   // dark brown: hand on
+                    } else {
+                        drawHandIcon(handOffPainter, r, tint = Color(0xFFB71C1C))  // dark red: hand off
+                    }
+                }
+            )
+
+            Game3DButton(
+                sizeDp = PAUSE_BUTTON_SIZE_DP.dp,
+                onClick = onPauseToggle,
+                // While paused the same button shows Play, so you can tap it to continue.
+                icon = { r -> if (isPaused) drawPlayIcon(r) else drawPauseIcon(r) }
+            )
+        }
     }
 }
 
@@ -168,12 +211,16 @@ private fun BoxScope.ScoreCorner(currentScore: Int, bestScore: Int) {
 
         Row(verticalAlignment = Alignment.CenterVertically) {
 
-            // Half an apple (cut open, showing the inside).
-            Canvas(modifier = Modifier.size(SCORE_ICON_SIZE_DP.dp)) {
-                translate(size.width / 2f, size.height / 2f) {
-                    drawHalfApple(size.minDimension * 0.36f)
-                }
-            }
+            
+
+//            HERE IS THE HALF MF APPLE
+
+            Image(
+                painter = painterResource(id = R.drawable.half_apple),
+                contentDescription = "Score",
+                modifier = Modifier.size(SCORE_ICON_SIZE_DP.dp),
+                contentScale = ContentScale.Fit
+            )
 
             Spacer(modifier = Modifier.width(10.dp))
 
@@ -215,7 +262,11 @@ private fun BoxScope.LivesBar(livesLeft: Int, handResult: HandLandmarkerResult?)
 
         Row(
             modifier = Modifier
-                .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
+                .then(
+                    if (SHOW_HEART_BACKGROUND)
+                        Modifier.background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
+                    else Modifier
+                )
                 .padding(horizontal = 14.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically

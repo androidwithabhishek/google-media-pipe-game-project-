@@ -11,6 +11,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
+import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.SMALL_BOMB_LIVES_LOST
+import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.SMALL_BOMB_SCORE_PENALTY
 
 
 // ---------------------------------------------------------------------
@@ -47,7 +49,8 @@ class BombType(
     val shakeSeconds: Float,
     val flashColor: Color,
     val tintColor: Color,
-    val tintAlpha: Float
+    val tintAlpha: Float,
+    val scorePenalty: Int = 0          // points taken away when you cut this bomb (0 = none)
 )
 
 
@@ -64,7 +67,8 @@ object Bombs {
         bodyColor = Color(0xFF212121),
         glowColor = Color(0xFFFF5722),
         hasSkull = false,
-        livesLost = 2,
+        livesLost = SMALL_BOMB_LIVES_LOST,
+        scorePenalty = SMALL_BOMB_SCORE_PENALTY,
         blastScale = 3.5f,
         blastSeconds = 1.4f,
         particleCount = 60,

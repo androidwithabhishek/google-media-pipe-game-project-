@@ -18,7 +18,7 @@ import gupta.abhishek.googlemediapipe.presentation.FruitTestScreen
 import gupta.abhishek.googlemediapipe.presentation.screen.MainScreen
 
 // true = open the fruit test screen first. false = open the game first.
-private const val SHOW_FRUIT_TEST = true
+private const val SHOW_FRUIT_TEST = false
 
 // true = show the hand animation (skeleton/overlay) on screen
 // false = hide it, but the hand analyser still runs in the background

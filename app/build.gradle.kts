@@ -103,6 +103,8 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation("io.coil-kt.coil3:coil-gif:3.6.3")
 
+    implementation(libs.androidx.material.icons.extended)
+
 
 
 }

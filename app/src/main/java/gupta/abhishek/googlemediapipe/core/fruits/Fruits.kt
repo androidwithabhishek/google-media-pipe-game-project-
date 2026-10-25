@@ -21,6 +21,6 @@ object Fruits {
         Banana.type,
         Pomegranate.type,
         Cherry.type,
-        Pear.type
+//        Pear.type
     )
 }

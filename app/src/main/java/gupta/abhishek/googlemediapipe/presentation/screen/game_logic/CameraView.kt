@@ -1,7 +1,5 @@
 package gupta.abhishek.googlemediapipe.presentation.screen.game_logic
 
-
-
 import android.content.Context
 import android.hardware.display.DisplayManager
 import androidx.camera.core.CameraSelector
@@ -20,11 +18,13 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandAnalyzer
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandLandmarkerHelper
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 // ---------------------------------------------------------------------
 // CameraView
-//   Camera setup. Also tells the frame grabber when the phone rotates,
-//   so MediaPipe always gets an upright picture.
+//   Camera picture + hand analysis. Only composed when hand control is ON.
+//   When it leaves the screen, the camera is switched off (saves battery and CPU).
 // ---------------------------------------------------------------------
 @Composable
 internal fun CameraView(helper: HandLandmarkerHelper) {
@@ -33,6 +33,12 @@ internal fun CameraView(helper: HandLandmarkerHelper) {
 
     val previewView = remember { PreviewView(context) }
 
+    // Hand analysis runs on this background thread, NOT on the UI thread.
+    val analysisExecutor: ExecutorService = remember { Executors.newSingleThreadExecutor() }
+
+    // Keeps the camera provider so the camera can be turned off later.
+    val cameraProviderHolder = remember { arrayOfNulls<ProcessCameraProvider>(1) }
+
     val imageAnalyzer = remember {
         ImageAnalysis.Builder()
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
@@ -40,7 +46,7 @@ internal fun CameraView(helper: HandLandmarkerHelper) {
             .build()
     }
 
-    // Watches screen rotation and passes it to the frame grabber.
+    // Watches screen rotation, and turns the camera off when this view leaves the screen.
     DisposableEffect(Unit) {
 
         val displayManager =
@@ -59,7 +65,11 @@ internal fun CameraView(helper: HandLandmarkerHelper) {
 
         displayManager.registerDisplayListener(displayListener, null)
 
-        onDispose { displayManager.unregisterDisplayListener(displayListener) }
+        onDispose {
+            displayManager.unregisterDisplayListener(displayListener)
+            cameraProviderHolder[0]?.unbindAll()     // camera OFF
+            analysisExecutor.shutdown()
+        }
     }
 
     AndroidView(
@@ -71,6 +81,7 @@ internal fun CameraView(helper: HandLandmarkerHelper) {
             cameraProviderFuture.addListener({
 
                 val cameraProvider = cameraProviderFuture.get()
+                cameraProviderHolder[0] = cameraProvider
 
                 val preview = Preview.Builder().build()
                 preview.surfaceProvider = previewView.surfaceProvider
@@ -78,7 +89,7 @@ internal fun CameraView(helper: HandLandmarkerHelper) {
                 previewView.display?.let { imageAnalyzer.targetRotation = it.rotation }
 
                 imageAnalyzer.setAnalyzer(
-                    ContextCompat.getMainExecutor(ctx),
+                    analysisExecutor,
                     HandAnalyzer(helper)
                 )
 
