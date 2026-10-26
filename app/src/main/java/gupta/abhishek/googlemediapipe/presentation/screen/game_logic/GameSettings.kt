@@ -61,8 +61,46 @@ internal const val CONFETTI_GRAVITY = 1.2f         // how fast the pieces fall (
 
 internal const val SHOW_HEART_BACKGROUND = false    // false = hearts without the dark box behind them
 
-internal const val STARTING_LIVES = 1
+internal const val STARTING_LIVES = 0
 
 internal const val SCORE_ICON_RATIO = 1.3f    // apple size as a share of the score text size
 
 internal const val SCORE_TEXT_OFFSET_Y_DP = 6f    // how far the score moves down (try 4f to 10f)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ----- Game over card (background picture + text) -----
+internal const val GAME_OVER_CARD_WIDTH_DP = 560f       // card width
+internal const val GAME_OVER_CARD_HEIGHT_DP = 360f      // card height (match the picture's shape)
+internal const val GAME_OVER_CONTENT_PADDING_DP = 40f   // space between the card edge and the text
+internal const val GAME_OVER_LINE_GAP_DP = 10f          // space between the text lines
+internal const val GAME_OVER_BUTTON_GAP_DP = 10f        // space between the last line and the button
+internal const val GAME_OVER_BUTTON_SIZE_DP = 88f       // size of the replay button
+
+// Text sizes (sp)
+internal const val GAME_OVER_TITLE_SIZE_SP = 40f        // "GAME OVER" / "NEW HIGH SCORE!"
+internal const val GAME_OVER_SCORE_SIZE_SP = 32f        // "Score: ..."
+internal const val GAME_OVER_BEST_SIZE_SP = 26f         // "Best: ..."
+
+// Tilt of each line, in degrees (negative = left, positive = right)
+internal const val GAME_OVER_TITLE_TILT_DEGREES = -4f
+internal const val GAME_OVER_SCORE_TILT_DEGREES = 2f
+internal const val GAME_OVER_BEST_TILT_DEGREES = -2f
+
+// Colors (ARGB hex)
+internal const val GAME_OVER_NEW_TITLE_COLOR = 0xFFFFD54FL      // gold title on a new high score
+internal const val GAME_OVER_NORMAL_TITLE_COLOR = 0xFFFF5252L   // red title on a normal game over
+internal const val GAME_OVER_SCORE_COLOR = 0xFFFFFFFFL          // white score
+internal const val GAME_OVER_BEST_COLOR = 0xFFFFFF00L           // yellow best score

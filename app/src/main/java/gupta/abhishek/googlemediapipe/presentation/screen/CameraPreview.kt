@@ -31,6 +31,10 @@ import gupta.abhishek.googlemediapipe.core.fruits.Blast
 import gupta.abhishek.googlemediapipe.core.fruits.Fruits
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandLandmarkerHelper
 import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.*
+import gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils.GameHud
+import gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils.GameOverCard
+import gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils.PauseOverlay
+import gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils.RestartButton
 import kotlin.random.Random
 
 // ---------------------------------------------------------------------
