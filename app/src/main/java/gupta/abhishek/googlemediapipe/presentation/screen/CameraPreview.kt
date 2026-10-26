@@ -131,7 +131,7 @@ fun CameraPreview(
 
     // The hand tip is open while it is wanted: hand mode on, not seen before, game running.
     val instructionVisible =
-        handControlEnabled && showHandInstruction && !instructionDismissed && livesLeft > 0
+        false
 
 
     // ---------------- HELPER FUNCTIONS ----------------
@@ -491,8 +491,8 @@ fun CameraPreview(
         }
 
         // One-time hand tip. Drawn last, so it covers everything.
-        if (instructionVisible) {
-            HandInstructionCard(onDismiss = { dismissInstruction() })
-        }
+//        if (instructionVisible) {
+//            HandInstructionCard(onDismiss = { dismissInstruction() })
+//        }
     }
 }
