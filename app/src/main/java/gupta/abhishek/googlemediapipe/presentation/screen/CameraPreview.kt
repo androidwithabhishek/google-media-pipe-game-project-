@@ -134,8 +134,8 @@ fun CameraPreview(
     val restartButtonEndPx = with(density) { RESTART_BUTTON_MARGIN_END_DP.dp.toPx() }
 
     // The hand tip is open while it is wanted: hand mode on, not seen before, game running.
-    val instructionVisible =
-        false
+    val instructionVisible = false
+
 
 
     // ---------------- HELPER FUNCTIONS ----------------
@@ -481,11 +481,17 @@ fun CameraPreview(
         ConfettiLayer(trigger = confettiTrigger)
 
         // Restart button and game over card, only on game over.
-        if (livesLeft <= 0) {
-            RestartButton(
-                restartHoldProgress = restartHoldProgress,
-                onRestart = { restartGame() }
-            )
+
+        if (livesLeft <= 0 ) {
+
+            if (handControlEnabled ) {
+
+                RestartButton(
+                    restartHoldProgress = restartHoldProgress,
+                    onRestart = { restartGame() }
+                )
+            }
+
 
             GameOverCard(
                 currentScore = currentScore,
@@ -495,8 +501,8 @@ fun CameraPreview(
         }
 
         // One-time hand tip. Drawn last, so it covers everything.
-//        if (instructionVisible) {
-//            HandInstructionCard(onDismiss = { dismissInstruction() })
-//        }
+        if (instructionVisible) {
+
+        }
     }
 }

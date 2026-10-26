@@ -29,6 +29,7 @@ fun MainScreen(
     viewModel: MainViewModel = hiltViewModel()
 ) {
     val bestScore by viewModel.bestScore.collectAsState()
+
     val settings by viewModel.settings.collectAsState()
 
     // Sound effects and music. Music pauses in the background and resumes when the app returns.
