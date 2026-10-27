@@ -1,5 +1,6 @@
-package gupta.abhishek.googlemediapipe.presentation
+package gupta.abhishek.googlemediapipe.presentation.screen
 
+import RestartButton
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -30,11 +31,16 @@ import gupta.abhishek.googlemediapipe.R
 import gupta.abhishek.googlemediapipe.core.fruits.Blast
 import gupta.abhishek.googlemediapipe.core.fruits.Fruits
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandLandmarkerHelper
+import gupta.abhishek.googlemediapipe.core.sound.GameSounds
+import gupta.abhishek.googlemediapipe.presentation.BombType
+import gupta.abhishek.googlemediapipe.presentation.Bombs
+import gupta.abhishek.googlemediapipe.presentation.CUT_DURATION
+import gupta.abhishek.googlemediapipe.presentation.FruitCut
 import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.*
 import gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils.GameHud
 import gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils.GameOverCard
 import gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils.PauseOverlay
-import gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils.RestartButton
+
 import kotlin.random.Random
 
 // ---------------------------------------------------------------------
@@ -176,6 +182,19 @@ fun CameraPreview(
         dropNextItem()
     }
 
+    val restartGameWithHands = {
+        sounds?.playRestart()
+        currentScore = 0
+        livesLeft = STARTING_LIVES
+        newBestAnnounced = false
+        isPaused = false
+        runningCuts.clear()
+        runningBlasts.clear()
+        touchSegments.clear()
+        shakeSecondsLeft = 0f
+        dropNextItem()
+    }
+
     // Pauses or continues the game. Any running camera shake is stopped so the picture stays still.
     val togglePause = {
         sounds?.playUiTouch()
@@ -183,9 +202,11 @@ fun CameraPreview(
         shakeSecondsLeft = 0f
         shakeOffsetX = 0f
         shakeOffsetY = 0f
+
     }
 
     // Closes the hand tip and remembers it, so it is never shown again.
+
     val dismissInstruction = {
         sounds?.playUiTouch()
         instructionDismissed = true
@@ -207,7 +228,7 @@ fun CameraPreview(
     // When the game ends (lives reach 0): play the sound and save the score once.
     LaunchedEffect(livesLeft) {
         if (livesLeft <= 0) {
-            latestSounds?.playGameOver()
+            latestSounds?.playGameOver(newHighScore = currentScore > 0 && currentScore >= bestScore)
             latestOnGameOver(currentScore)
         }
     }
@@ -336,6 +357,10 @@ fun CameraPreview(
                     runningBlasts.add(Blast(bomb, itemX, itemY, itemRadius))
                     startCameraShake(bomb.shakePower, bomb.shakeSeconds)
 
+
+                    if (bomb === Bombs.Mega) latestSounds?.playBigBombBlast()
+                    else latestSounds?.playSmallBombBlast()
+
                     livesLeft = (livesLeft - bomb.livesLost).coerceAtLeast(0)
                     currentScore = (currentScore - bomb.scorePenalty).coerceAtLeast(0)
 
@@ -352,10 +377,16 @@ fun CameraPreview(
                     currentScore += 1
 
                     runningCuts.add(
-                        FruitCut(currentFruit, itemX, itemY, fruitRadiusFor(currentFruit), fruitSpinAngle)
+                        FruitCut(
+                            currentFruit,
+                            itemX,
+                            itemY,
+                            fruitRadiusFor(currentFruit),
+                            fruitSpinAngle
+                        )
                     )
                     startCameraShake(CUT_SHAKE_STRENGTH_PX, CUT_SHAKE_DURATION_SECONDS)
-                    latestSounds?.playSwoosh()
+                    latestSounds?.playFruitCut()
                     if (currentScore % 10 == 0) latestSounds?.playLevelUp()
 
                     // New high score: confetti and the fanfare, once per game.
@@ -363,7 +394,7 @@ fun CameraPreview(
                     if (beatBestScoreNow) {
                         newBestAnnounced = true
                         confettiTrigger += 1
-                        latestSounds?.playHighScore()
+                        latestSounds?.playHighScoreConfetti()
                     }
 
                     if (currentScore > bestScore) {
@@ -456,8 +487,8 @@ fun CameraPreview(
         // It is placed BEFORE the HUD so the small buttons stay on top and work as Play.
         if (isPaused && livesLeft > 0) {
             PauseOverlay(
-                onResume = { togglePause() },
-                onRestart = { restartGame() }
+                onResume = { togglePause()  },
+                onRestart = { restartGame()  }
             )
         }
 
@@ -488,7 +519,8 @@ fun CameraPreview(
 
                 RestartButton(
                     restartHoldProgress = restartHoldProgress,
-                    onRestart = { restartGame() }
+                    onRestart = {restartGameWithHands()  },
+                    sounds = sounds
                 )
             }
 

@@ -1,118 +1,112 @@
-package gupta.abhishek.googlemediapipe.presentation
+package gupta.abhishek.googlemediapipe.core.sound
 
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.SoundPool
-import gupta.abhishek.googlemediapipe.R
-
+import android.os.Handler
+import android.os.Looper
 
 // ---------------------------------------------------------------------
 // GameSounds
-//   Loads all sound files from res/raw and plays them.
-//
-//   Short effects (pop, swoosh, ...)  -> SoundPool  (fast, can overlap)
-//   Long background music             -> MediaPlayer (loops forever)
-//
-//   Usage:
-//     val sounds = GameSounds(context)
-//     sounds.playCatch()
-//     sounds.startMusic()
-//     sounds.release()      <- call when the screen closes
+//   Plays the game's sound effects and background music.
+//   Settings (files, volume, length, cooldown) come from GameSoundSettings.kt.
 // ---------------------------------------------------------------------
 class GameSounds(context: Context) {
 
-    // ---------------- SHORT EFFECTS ----------------
-
-    // Tell Android these sounds belong to a game.
-    private val audioAttributes = AudioAttributes.Builder()
-        .setUsage(AudioAttributes.USAGE_GAME)
-        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+    private val soundPool: SoundPool = SoundPool.Builder()
+        .setMaxStreams(GameSoundSettings.MAX_SIMULTANEOUS_SOUNDS)
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+        )
         .build()
 
-    // SoundPool = the box that holds the short effects. Up to 6 can play at once.
-    private val soundPool = SoundPool.Builder()
-        .setMaxStreams(6)
-        .setAudioAttributes(audioAttributes)
-        .build()
+    // Each file is loaded once: file resource id -> SoundPool id.
+    private val loadedIds = HashMap<Int, Int>()
 
-    // Load every effect once. load() gives back a number we use later to play it.
-    private val swoosh       = soundPool.load(context, R.raw.playful_swoosh, 1)
-    private val catchPop     = soundPool.load(context, R.raw.fruit_catch_pop, 1)
-    private val plusFour     = soundPool.load(context, R.raw.score_plus_four, 1)
-    private val lifeLost     = soundPool.load(context, R.raw.soft_life_lost, 1)
-    private val gameOver     = soundPool.load(context, R.raw.game_over, 1)
-    private val levelUp      = soundPool.load(context, R.raw.bonus_level_up, 1)
-    private val whoosh       = soundPool.load(context, R.raw.falling_whoosh, 1)
-    private val restart      = soundPool.load(context, R.raw.restart, 1)
-    private val highScore    = soundPool.load(context, R.raw.high_score_fanfare, 1)
-    private val uiTouch      = soundPool.load(context, R.raw.ui_touch, 1)
+    // When each file last started (milliseconds), for the cooldown.
+    private val lastStartedAt = HashMap<Int, Long>()
 
+    // Used to stop a sound after its maxMillis.
+    private val handler = Handler(Looper.getMainLooper())
 
-    // ---------------- BACKGROUND MUSIC ----------------
-
-    // create() can return null if the file is broken, so the "?" is needed.
-    private val music: MediaPlayer? =
-        MediaPlayer.create(context, R.raw.game_background_loop)?.apply {
-            isLooping = true            // start again when the song ends
-            setVolume(0.35f, 0.35f)     // quiet, so effects are heard on top
+    private val music: MediaPlayer? = GameSoundSettings.backgroundMusicResId?.let { resId ->
+        MediaPlayer.create(context, resId)?.apply {
+            isLooping = true
+            setVolume(GameSoundSettings.MUSIC_VOLUME, GameSoundSettings.MUSIC_VOLUME)
         }
+    }
 
+
+
+    init {
+        for (effect in GameSoundSettings.allEffects) {
+            val resId = effect.resId ?: continue
+            if (!loadedIds.containsKey(resId)) {
+                loadedIds[resId] = soundPool.load(context, resId, 1)
+            }
+        }
+    }
+
+    // Starts one sound effect, applying its volume, cooldown and maximum length.
+    private fun play(effect: SoundEffect) {
+        val resId = effect.resId ?: return          // no file yet: stay silent
+        val soundId = loadedIds[resId] ?: return
+
+        val now = System.currentTimeMillis()
+        val last = lastStartedAt[resId] ?: 0L
+        if (now - last < effect.cooldownMillis) return
+
+        val streamId = soundPool.play(soundId, effect.volume, effect.volume, 1, 0, 1f)
+        if (streamId == 0) return                   // 0 = the sound could not start
+
+        lastStartedAt[resId] = now
+        if (effect.maxMillis > 0L) {
+            handler.postDelayed({ soundPool.stop(streamId) }, effect.maxMillis)
+        }
+    }
 
     // ---------------- PLAY FUNCTIONS ----------------
 
-    // The dagger swings through the fruit.
-    fun playSwoosh() = play(swoosh, 0.5f)
+    fun playFruitCut() = play(GameSoundSettings.fruitCut)
 
-    // Ball was caught.
-    fun playCatch() = play(catchPop)
+    fun playSmallBombBlast() = play(GameSoundSettings.smallBombBlast)
 
-    // Bonus ping for every 4th point.
-    fun playScorePlusFour() = play(plusFour)
+    fun playBigBombBlast() = play(GameSoundSettings.bigBombBlast)
 
-    // Bonus fanfare for every 10th point (the ball gets faster).
-    fun playLevelUp() = play(levelUp)
+    // newHighScore = true plays the happy game over sound.
+    fun playGameOver(newHighScore: Boolean = false) =
+        play(if (newHighScore) GameSoundSettings.gameOverNewHighScore else GameSoundSettings.gameOver)
 
-    // Ball fell off the bottom.
-    fun playFall() = play(whoosh, 0.7f)
+    fun playHighScoreConfetti() = play(GameSoundSettings.highScoreConfetti)
 
-    // You lost one life.
-    fun playLifeLost() = play(lifeLost)
+    fun playLifeLost() = play(GameSoundSettings.lifeLost)
 
-    // No lives left.
-    fun playGameOver() = play(gameOver)
+    fun playLevelUp() = play(GameSoundSettings.levelUp)
 
-    // Game was restarted.
-    fun playRestart() = play(restart)
+    fun playRestart() = play(GameSoundSettings.restart)
 
-    // You beat the high score.
-    fun playHighScore() = play(highScore)
+    fun playUiTouch() = play(GameSoundSettings.uiTouch)
 
-    // A button was touched.
-    fun playUiTouch() = play(uiTouch, 0.8f)
 
-    // Plays one effect. volume goes from 0.0 (silent) to 1.0 (full).
-    private fun play(soundId: Int, volume: Float = 1f) {
-        // play(id, leftVolume, rightVolume, priority, loop (0 = no), speed)
-        soundPool.play(soundId, volume, volume, 1, 0, 1f)
-    }
+    fun handRestartProgressSound() = play(GameSoundSettings.handRestartProgress)
 
-    // Start (or continue) the background music.
+   
+
     fun startMusic() {
-        if (music != null && !music.isPlaying) {
-            music.start()
-        }
+        if (music != null && !music.isPlaying) music.start()
     }
 
-    // Pause the background music (it continues from the same spot later).
     fun pauseMusic() {
-        if (music != null && music.isPlaying) {
-            music.pause()
-        }
+        if (music != null && music.isPlaying) music.pause()
     }
 
-    // Free the memory. Call this when the game screen closes.
+    // Frees the sounds. MainScreen calls this when the screen closes.
     fun release() {
+        handler.removeCallbacksAndMessages(null)
         soundPool.release()
         music?.release()
     }

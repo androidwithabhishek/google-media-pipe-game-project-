@@ -1,12 +1,3 @@
-package gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils
-
-import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.RESTART_BUTTON_MARGIN_END_DP
-import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.RESTART_BUTTON_MARGIN_TOP_DP
-import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.RESTART_BUTTON_SIZE_DP
-import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.RESTART_HOLD_SECONDS
-
-
-
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.BoxScope
@@ -14,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,20 +17,26 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.dp
 import gupta.abhishek.googlemediapipe.core.game_assets.drawTransparentReplayButton
+import gupta.abhishek.googlemediapipe.core.sound.GameSounds
+import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.RESTART_BUTTON_MARGIN_END_DP
+import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.RESTART_BUTTON_MARGIN_TOP_DP
+import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.RESTART_BUTTON_SIZE_DP
+import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.RESTART_HOLD_SECONDS
 
-// ---------------------------------------------------------------------
-// RestartButton
-//   Big replay button in the top right corner, shown on game over only.
-//   See-through glass with a gold arrow. A green ring fills while a hand holds on it.
-//   Size and margins: RESTART_BUTTON_* in GameSettings.kt.
-// ---------------------------------------------------------------------
 @Composable
 internal fun BoxScope.RestartButton(
     restartHoldProgress: Float,
-    onRestart: () -> Unit
+    onRestart: () -> Unit,
+    sounds: GameSounds? = null
 ) {
     val holdFraction = if (RESTART_HOLD_SECONDS > 0f)
         (restartHoldProgress / RESTART_HOLD_SECONDS).coerceIn(0f, 1f) else 0f
+
+    // True while a hand is on the button. The sound plays once, when the hand first arrives.
+    val isHolding = holdFraction > 0f
+    LaunchedEffect(isHolding) {
+        if (isHolding) sounds?.handRestartProgressSound()
+    }
 
     Canvas(
         modifier = Modifier

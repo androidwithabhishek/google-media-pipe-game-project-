@@ -16,8 +16,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandLandmarkerHelper
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandOverlay
-import gupta.abhishek.googlemediapipe.presentation.CameraPreview
-import gupta.abhishek.googlemediapipe.presentation.GameSounds
+import gupta.abhishek.googlemediapipe.core.sound.GameSounds
 import gupta.abhishek.googlemediapipe.presentation.MainViewModel
 
 // The real app screen: the game, with the hand overlay on top when enabled.
