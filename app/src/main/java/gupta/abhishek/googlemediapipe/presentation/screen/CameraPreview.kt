@@ -170,6 +170,7 @@ fun CameraPreview(
 
     // Resets the whole game to the start.
     val restartGame = {
+        sounds?.setGamePaused(false)
         sounds?.playRestart()
         currentScore = 0
         livesLeft = STARTING_LIVES
@@ -202,6 +203,7 @@ fun CameraPreview(
         shakeSecondsLeft = 0f
         shakeOffsetX = 0f
         shakeOffsetY = 0f
+        sounds?.setGamePaused(isPaused)
 
     }
 

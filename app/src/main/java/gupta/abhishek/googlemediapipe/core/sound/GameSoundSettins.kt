@@ -46,7 +46,7 @@ object GameSoundSettings {
 
     // ----- Bombs -----
     val smallBombBlast = SoundEffect(
-        resId = R.raw.small_bomb_blast_sound,
+        resId = R.raw.bomb_blast_sound,
         volume = 1f,
         maxMillis = 1800L
     )
@@ -80,14 +80,18 @@ object GameSoundSettings {
     // ----- No file yet. When you add one, set its resId, e.g. R.raw.life_lost -----
     val lifeLost = SoundEffect(resId = null)
     val levelUp = SoundEffect(resId = null)
-    val restart = SoundEffect(
-        resId = R.raw.restart_sound,
-        volume = 10f,
+    val uiTouch = SoundEffect(
+        resId = R.raw.ui_touch,   // keep your existing resId
+        volume = 0.8f,
+        maxMillis = 600L,
+        cooldownMillis = 120L,
+        pausable = false
     )
 
-    val uiTouch = SoundEffect(
-        resId = R.raw.ui_touch,
-        volume = 0.5f,
+    val restart = SoundEffect(
+        resId = R.raw.restart_sound,    // keep your existing resId (use your file name)
+        volume = 1f,
+        pausable = false
     )
     val handRestartProgress = SoundEffect(
         resId = R.raw.progress_sound,

@@ -6,13 +6,19 @@ import android.media.MediaPlayer
 import android.media.SoundPool
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 
 // ---------------------------------------------------------------------
 // GameSounds
-//   Plays the game's sound effects and background music.
-//   Settings (files, volume, length, cooldown) come from GameSoundSettings.kt.
+//   Plays sound effects and music. Settings come from GameSoundSettings.kt.
+//   When the game is paused, or the app goes to the background:
+//     - game sounds and music pause
+//     - button sounds (pausable = false) keep playing
 // ---------------------------------------------------------------------
 class GameSounds(context: Context) {
+
+    // A game sound that is playing: its SoundPool stream and when it must stop.
+    private class ActiveSound(val streamId: Int, var stopAt: Long)
 
     private val soundPool: SoundPool = SoundPool.Builder()
         .setMaxStreams(GameSoundSettings.MAX_SIMULTANEOUS_SOUNDS)
@@ -30,8 +36,16 @@ class GameSounds(context: Context) {
     // When each file last started (milliseconds), for the cooldown.
     private val lastStartedAt = HashMap<Int, Long>()
 
-    // Used to stop a sound after its maxMillis.
+    // Game sounds that are playing, oldest first.
+    private val activeSounds = LinkedHashMap<Int, ActiveSound>()
+
     private val handler = Handler(Looper.getMainLooper())
+
+    // Why game sounds may be paused: the game is paused, or the app is in the background.
+    private var gamePaused = false
+    private var appInForeground = true
+    private var effectsPaused = false
+    private var pausedAt = 0L
 
     private val music: MediaPlayer? = GameSoundSettings.backgroundMusicResId?.let { resId ->
         MediaPlayer.create(context, resId)?.apply {
@@ -39,8 +53,6 @@ class GameSounds(context: Context) {
             setVolume(GameSoundSettings.MUSIC_VOLUME, GameSoundSettings.MUSIC_VOLUME)
         }
     }
-
-
 
     init {
         for (effect in GameSoundSettings.allEffects) {
@@ -51,12 +63,34 @@ class GameSounds(context: Context) {
         }
     }
 
-    // Starts one sound effect, applying its volume, cooldown and maximum length.
+    // Checks every few milliseconds and stops the timed sounds whose time is up.
+    private val stopChecker = Runnable { checkStops() }
+
+    private fun checkStops() {
+        val now = SystemClock.elapsedRealtime()
+        val iterator = activeSounds.values.iterator()
+        while (iterator.hasNext()) {
+            val sound = iterator.next()
+            if (sound.stopAt <= now) {
+                soundPool.stop(sound.streamId)
+                iterator.remove()
+            }
+        }
+        // Keep checking while a timed sound is still playing.
+        if (!effectsPaused && activeSounds.values.any { it.stopAt != Long.MAX_VALUE }) {
+            handler.postDelayed(stopChecker, STOP_CHECK_MILLIS)
+        }
+    }
+
+    // Starts one sound effect, applying its volume, cooldown, maximum length and pause rules.
     private fun play(effect: SoundEffect) {
         val resId = effect.resId ?: return          // no file yet: stay silent
         val soundId = loadedIds[resId] ?: return
 
-        val now = System.currentTimeMillis()
+        // No new game sounds while paused or in the background.
+        if (effectsPaused && effect.pausable) return
+
+        val now = SystemClock.elapsedRealtime()
         val last = lastStartedAt[resId] ?: 0L
         if (now - last < effect.cooldownMillis) return
 
@@ -64,8 +98,49 @@ class GameSounds(context: Context) {
         if (streamId == 0) return                   // 0 = the sound could not start
 
         lastStartedAt[resId] = now
-        if (effect.maxMillis > 0L) {
+
+        if (effect.pausable) {
+            val stopAt = if (effect.maxMillis > 0L) now + effect.maxMillis else Long.MAX_VALUE
+            activeSounds[streamId] = ActiveSound(streamId, stopAt)
+            if (activeSounds.size > MAX_TRACKED_SOUNDS) {
+                activeSounds.remove(activeSounds.keys.first())
+            }
+            handler.removeCallbacks(stopChecker)
+            handler.post(stopChecker)
+        } else if (effect.maxMillis > 0L) {
+            // Button sounds are not paused, so a simple timer is enough.
             handler.postDelayed({ soundPool.stop(streamId) }, effect.maxMillis)
+        }
+    }
+
+    // Pauses or resumes game sounds and music, based on the two pause reasons.
+    private fun applyPauseState() {
+        val shouldPause = gamePaused || !appInForeground
+
+        if (shouldPause && !effectsPaused) {
+            effectsPaused = true
+            pausedAt = SystemClock.elapsedRealtime()
+            handler.removeCallbacks(stopChecker)
+            for (sound in activeSounds.values) {
+                soundPool.pause(sound.streamId)
+            }
+        } else if (!shouldPause && effectsPaused) {
+            effectsPaused = false
+            // Time spent paused does not count toward a sound's maximum length.
+            val pausedFor = SystemClock.elapsedRealtime() - pausedAt
+            for (sound in activeSounds.values) {
+                soundPool.resume(sound.streamId)
+                if (sound.stopAt != Long.MAX_VALUE) sound.stopAt += pausedFor
+            }
+            handler.removeCallbacks(stopChecker)
+            handler.post(stopChecker)
+        }
+
+        val player = music ?: return
+        if (shouldPause) {
+            if (player.isPlaying) player.pause()
+        } else if (!player.isPlaying) {
+            player.start()
         }
     }
 
@@ -91,23 +166,39 @@ class GameSounds(context: Context) {
 
     fun playUiTouch() = play(GameSoundSettings.uiTouch)
 
-
+    // Plays when a hand starts holding the replay button.
     fun handRestartProgressSound() = play(GameSoundSettings.handRestartProgress)
 
-   
+    // ---------------- PAUSE AND MUSIC ----------------
 
-    fun startMusic() {
-        if (music != null && !music.isPlaying) music.start()
+    // CameraPreview calls this when the game is paused or continued.
+    fun setGamePaused(paused: Boolean) {
+        gamePaused = paused
+        applyPauseState()
     }
 
+    // MainScreen calls this when the app comes to the front (and at start).
+    fun startMusic() {
+        appInForeground = true
+        applyPauseState()
+    }
+
+    // MainScreen calls this when the app goes to the background.
     fun pauseMusic() {
-        if (music != null && music.isPlaying) music.pause()
+        appInForeground = false
+        applyPauseState()
     }
 
     // Frees the sounds. MainScreen calls this when the screen closes.
     fun release() {
         handler.removeCallbacksAndMessages(null)
+        activeSounds.clear()
         soundPool.release()
         music?.release()
+    }
+
+    private companion object {
+        const val STOP_CHECK_MILLIS = 50L
+        const val MAX_TRACKED_SOUNDS = 16
     }
 }
