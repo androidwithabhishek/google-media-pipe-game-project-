@@ -19,14 +19,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import drawMenuIcon
+
 import gupta.abhishek.googlemediapipe.core.game_assets.drawPlayIcon
 import gupta.abhishek.googlemediapipe.core.game_assets.drawReplayIcon
 
-// ---------------------------------------------------------------------
-// PauseOverlay
-//   Shown while paused: the screen goes dark, with big Play and Replay buttons.
-//   It also catches touches, so nothing underneath can be tapped by accident.
-// ---------------------------------------------------------------------
+
 @Composable
 internal fun BoxScope.PauseOverlay(
     onResume: () -> Unit,
@@ -52,17 +50,24 @@ internal fun BoxScope.PauseOverlay(
         Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
 
             // Continue the game.
-            Game3DButton(
+            Game3DSquareButton(
                 sizeDp = 110.dp,
                 onClick = onResume,
                 icon = { r -> drawPlayIcon(r) }
             )
 
             // Start a new game.
-            Game3DButton(
+            Game3DSquareButton(
                 sizeDp = 110.dp,
                 onClick = onRestart,
                 icon = { r -> drawReplayIcon(r) }
+            )
+
+
+            Game3DSquareButton(
+                sizeDp = 110.dp,
+                onClick = onRestart,
+                icon = { r -> drawMenuIcon(r) }
             )
         }
     }

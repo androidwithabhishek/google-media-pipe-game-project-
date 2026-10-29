@@ -60,7 +60,7 @@ fun CameraPreview(
     modifier: Modifier = Modifier,
     bestScoreFromDatabase: Int = 0,               // best score saved in the database
     onGameOver: (Int) -> Unit = {},                // called with the final score when the game ends
-    handControlEnabled: Boolean = true,           // true = camera and hand gestures on
+    handControlEnabled: Boolean = false,           // true = camera and hand gestures on
     showHandInstruction: Boolean = false,         // true = show the hand tip (until it was seen once)
     onToggleHandControl: () -> Unit = {},         // called by the hand button
     onHandInstructionSeen: () -> Unit = {},       // called when the hand tip is closed
@@ -495,21 +495,19 @@ fun CameraPreview(
         }
 
         // Score (top left), hearts (top center), hand and pause buttons (bottom left).
-        GameHud(
-            currentScore = currentScore,
-            livesLeft = livesLeft,
-            bestScore = bestScore,
-            handResult = handResult,
-            isPaused = isPaused,
-            showPauseButton = livesLeft > 0,
-            onPauseToggle = { togglePause() },
-            handControlEnabled = handControlEnabled,
-            onHandToggle = {
-                sounds?.playUiTouch()
-                onToggleHandControl()
-            }
-        )
-
+        if (!isPaused) {
+            GameHud(
+                currentScore = currentScore,
+                livesLeft = livesLeft,
+                bestScore = bestScore,
+                handResult = handResult,
+                isPaused = isPaused,
+                showPauseButton = livesLeft > 0,
+                onPauseToggle = { togglePause() },
+                handControlEnabled = handControlEnabled,
+                onHandToggle = { onToggleHandControl() }
+            )
+        }
         // Confetti when a new high score is beaten.
         ConfettiLayer(trigger = confettiTrigger)
 

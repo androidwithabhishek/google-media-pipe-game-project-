@@ -14,14 +14,7 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 
-// ---------------------------------------------------------------------
-// Hearts for the lives display. Two kinds, drawn just like the fruits:
-//   drawHeart(r)       -> a shiny red heart (a life you still have)
-//   drawEmptyHeart(r)  -> a dark empty placeholder (a life you lost)
-// Both paint around the point (0, 0), and "r" is the size.
-// ---------------------------------------------------------------------
 
-// The heart outline: two round lobes on top, a point at the bottom.
 private fun heartPath(r: Float): Path = Path().apply {
 
     // Start at the point at the bottom.
@@ -139,10 +132,7 @@ fun DrawScope.drawHeart(r: Float) {
     )
 }
 
-// ---------------------------------------------------------------------
-// drawEmptyHeart: the empty placeholder for a lost life.
-// A dark hollow heart with a gray rim, like a slot waiting to be filled.
-// ---------------------------------------------------------------------
+
 fun DrawScope.drawEmptyHeart(r: Float) {
 
     val body = heartPath(r)

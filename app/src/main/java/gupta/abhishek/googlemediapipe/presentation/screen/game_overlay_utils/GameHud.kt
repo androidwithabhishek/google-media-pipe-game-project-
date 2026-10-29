@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.sp
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
 import gupta.abhishek.googlemediapipe.R
 import gupta.abhishek.googlemediapipe.core.game_assets.drawEmptyHeart
-import gupta.abhishek.googlemediapipe.core.game_assets.drawHandIcon
+import gupta.abhishek.googlemediapipe.core.game_assets.cameraIcon
 import gupta.abhishek.googlemediapipe.core.game_assets.drawHeart
 import gupta.abhishek.googlemediapipe.core.game_assets.drawPauseIcon
 import gupta.abhishek.googlemediapipe.core.game_assets.drawPlayIcon
@@ -79,7 +79,7 @@ internal fun BoxScope.GameHud(
 
     LivesBar(livesLeft = livesLeft, handResult = handResult)
 
-    if (showPauseButton) {
+    if (showPauseButton && !isPaused) {
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -92,9 +92,9 @@ internal fun BoxScope.GameHud(
                 onClick = onHandToggle,
                 icon = { r ->
                     if (handControlEnabled) {
-                        drawHandIcon(handOnPainter, r, tint = Color(0xFF3E2723))   // dark brown: camera on
+                        cameraIcon(handOnPainter, r, tint = Color(0xFF3E2723))   // dark brown: camera on
                     } else {
-                        drawHandIcon(handOffPainter, r, tint = Color(0xFFB71C1C))  // dark red: camera off
+                        cameraIcon(handOffPainter, r, tint = Color(0xFFB71C1C))  // dark red: camera off
                     }
                 }
             )
