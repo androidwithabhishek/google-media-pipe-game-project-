@@ -1,25 +1,19 @@
-package gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils
+package gupta.abhishek.googlemediapipe.core.game_assets
 
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.Dp
-import gupta.abhishek.googlemediapipe.core.game_assets.drawYellowRoundButton
-import gupta.abhishek.googlemediapipe.core.game_assets.drawYellowSquareButton
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.geometry.Rect

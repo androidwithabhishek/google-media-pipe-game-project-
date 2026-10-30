@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils
+package gupta.abhishek.googlemediapipe.presentation.game_overlay_utils.hud_utils
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import gupta.abhishek.googlemediapipe.core.fonts.GlossyText
 
 // ---------------------------------------------------------------------
 // CameraPermissionAlert
@@ -86,6 +87,18 @@ fun CameraPermissionAlert(
 
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
 
+
+                Button(
+                    onClick = onCancel,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF9E9E9E),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(text = "Cancel", fontSize = 18.sp)
+                }
+
+
                 Button(
                     onClick = onPrimaryClick,
                     colors = ButtonDefaults.buttonColors(
@@ -100,15 +113,7 @@ fun CameraPermissionAlert(
                     )
                 }
 
-                Button(
-                    onClick = onCancel,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF9E9E9E),
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text(text = "Cancel", fontSize = 18.sp)
-                }
+
             }
         }
     }

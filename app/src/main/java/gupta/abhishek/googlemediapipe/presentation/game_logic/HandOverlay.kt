@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.core.google_media_pipe
+package gupta.abhishek.googlemediapipe.presentation.game_logic
 
 
 import android.util.Log

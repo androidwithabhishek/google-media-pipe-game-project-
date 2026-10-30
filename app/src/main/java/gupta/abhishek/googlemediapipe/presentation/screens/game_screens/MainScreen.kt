@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation.screen
+package gupta.abhishek.googlemediapipe.presentation.screens.game_screens
 
 import android.Manifest
 import android.app.Activity
@@ -28,11 +28,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandLandmarkerHelper
-import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandOverlay
+import gupta.abhishek.googlemediapipe.presentation.game_logic.HandOverlay
 import gupta.abhishek.googlemediapipe.core.sound.GameSounds
 import gupta.abhishek.googlemediapipe.presentation.MainViewModel
-import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.GameScreen
-import gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils.CameraPermissionAlert
+import gupta.abhishek.googlemediapipe.presentation.game_logic.GameScreen
+import gupta.abhishek.googlemediapipe.presentation.game_overlay_utils.hud_utils.CameraPermissionAlert
 
 // ---------------------------------------------------------------------
 // MainScreen
@@ -178,12 +178,12 @@ fun MainScreen(
 
 }
 
-// True when the app has the camera permission right now.
+
 private fun Context.hasCameraPermission(): Boolean =
     ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
             PackageManager.PERMISSION_GRANTED
 
-// Opens this app's page in the phone settings, where the player can allow the camera.
+
 private fun Context.openAppSettings() {
     val intent = Intent(
         Settings.ACTION_APPLICATION_DETAILS_SETTINGS,

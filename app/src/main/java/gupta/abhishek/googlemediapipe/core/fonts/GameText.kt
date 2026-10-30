@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils
+package gupta.abhishek.googlemediapipe.core.fonts
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -13,7 +13,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
-import gupta.abhishek.googlemediapipe.core.fonts.GameFonts
+import gupta.abhishek.googlemediapipe.presentation.game_overlay_utils.hud_utils.GAME_OVER_TEXT_SHADOW_ALPHA
+import gupta.abhishek.googlemediapipe.presentation.game_overlay_utils.hud_utils.GAME_OVER_TEXT_SHADOW_BLUR_PX
+import gupta.abhishek.googlemediapipe.presentation.game_overlay_utils.hud_utils.GAME_OVER_TEXT_SHADOW_OFFSET_PX
 
 
 @Composable

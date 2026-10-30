@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils
+package gupta.abhishek.googlemediapipe.presentation.game_overlay_utils.hud_utils
 
 
 
@@ -23,6 +23,8 @@ import drawMenuIcon
 
 import gupta.abhishek.googlemediapipe.core.game_assets.drawPlayIcon
 import gupta.abhishek.googlemediapipe.core.game_assets.drawReplayIcon
+import gupta.abhishek.googlemediapipe.core.fonts.GlossyText
+import gupta.abhishek.googlemediapipe.core.game_assets.Game3DSquareButton
 
 
 @Composable

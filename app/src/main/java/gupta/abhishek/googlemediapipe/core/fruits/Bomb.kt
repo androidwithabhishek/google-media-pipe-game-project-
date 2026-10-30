@@ -11,8 +11,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
-import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.SMALL_BOMB_LIVES_LOST
-import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.SMALL_BOMB_SCORE_PENALTY
+import gupta.abhishek.googlemediapipe.presentation.game_logic.SMALL_BOMB_LIVES_LOST
+import gupta.abhishek.googlemediapipe.presentation.game_logic.SMALL_BOMB_SCORE_PENALTY
 
 
 // ---------------------------------------------------------------------

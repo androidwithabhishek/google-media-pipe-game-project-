@@ -18,13 +18,13 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.dp
 import gupta.abhishek.googlemediapipe.core.game_assets.drawTransparentReplayButton
 import gupta.abhishek.googlemediapipe.core.sound.GameSounds
-import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.RESTART_BUTTON_MARGIN_END_DP
-import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.RESTART_BUTTON_MARGIN_TOP_DP
-import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.RESTART_BUTTON_SIZE_DP
-import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.RESTART_HOLD_SECONDS
+import gupta.abhishek.googlemediapipe.presentation.game_logic.RESTART_BUTTON_MARGIN_END_DP
+import gupta.abhishek.googlemediapipe.presentation.game_logic.RESTART_BUTTON_MARGIN_TOP_DP
+import gupta.abhishek.googlemediapipe.presentation.game_logic.RESTART_BUTTON_SIZE_DP
+import gupta.abhishek.googlemediapipe.presentation.game_logic.RESTART_HOLD_SECONDS
 
 @Composable
-internal fun BoxScope.RestartButton(
+internal fun BoxScope.HandRestartButton(
     restartHoldProgress: Float,
     onRestart: () -> Unit,
     sounds: GameSounds? = null

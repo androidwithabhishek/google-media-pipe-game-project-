@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation.screen.game_logic
+package gupta.abhishek.googlemediapipe.presentation.game_logic
 
 import android.content.Context
 import android.hardware.display.DisplayManager

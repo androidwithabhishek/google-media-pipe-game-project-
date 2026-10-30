@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils
+package gupta.abhishek.googlemediapipe.core.game_assets
 
 
 
@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.Dp
-import gupta.abhishek.googlemediapipe.core.game_assets.drawYellowRoundButton
 
 
 @Composable

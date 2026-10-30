@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils
+package gupta.abhishek.googlemediapipe.presentation.game_overlay_utils.hud_utils
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import gupta.abhishek.googlemediapipe.R
 import gupta.abhishek.googlemediapipe.core.game_assets.drawReplayIcon
+import gupta.abhishek.googlemediapipe.core.fonts.GameOverText
+import gupta.abhishek.googlemediapipe.core.game_assets.Game3DButton
 
 
 // ----- Game over card (background picture + text) -----

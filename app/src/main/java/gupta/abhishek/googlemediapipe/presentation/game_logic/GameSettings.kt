@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation.screen.game_logic
+package gupta.abhishek.googlemediapipe.presentation.game_logic
 
 // ---------------------------------------------------------------------
 // GAME SETTINGS

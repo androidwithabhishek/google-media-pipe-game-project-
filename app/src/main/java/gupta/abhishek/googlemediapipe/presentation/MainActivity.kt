@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe
+package gupta.abhishek.googlemediapipe.presentation
 
 import android.content.pm.ActivityInfo
 import android.os.Bundle
@@ -11,8 +11,8 @@ import androidx.compose.runtime.setValue
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
 import dagger.hilt.android.AndroidEntryPoint
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandLandmarkerHelper
-import gupta.abhishek.googlemediapipe.presentation.screen.FruitTestScreen
-import gupta.abhishek.googlemediapipe.presentation.screen.MainScreen
+import gupta.abhishek.googlemediapipe.presentation.screens.other_screens.test.FruitTestScreen
+import gupta.abhishek.googlemediapipe.presentation.screens.game_screens.MainScreen
 import java.util.concurrent.Executors
 
 // true = open the fruit test screen first. false = open the game first.

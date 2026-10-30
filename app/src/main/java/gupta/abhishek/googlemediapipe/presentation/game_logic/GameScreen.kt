@@ -1,6 +1,6 @@
-package gupta.abhishek.googlemediapipe.presentation.screen.game_logic
+package gupta.abhishek.googlemediapipe.presentation.game_logic
 
-import RestartButton
+import HandRestartButton
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -39,9 +39,9 @@ import gupta.abhishek.googlemediapipe.core.fruits.Bombs
 import gupta.abhishek.googlemediapipe.core.fruits.CUT_DURATION
 import gupta.abhishek.googlemediapipe.core.fruits.FruitCut
 import gupta.abhishek.googlemediapipe.core.game_assets.ConfettiLayer
-import gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils.GameHud
-import gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils.GameOverCard
-import gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils.PauseOverlay
+import gupta.abhishek.googlemediapipe.presentation.game_overlay_utils.hud_utils.GamePausedMenu
+import gupta.abhishek.googlemediapipe.presentation.game_overlay_utils.hud_utils.GameOverCard
+import gupta.abhishek.googlemediapipe.presentation.game_overlay_utils.hud_utils.PauseOverlay
 
 import kotlin.random.Random
 
@@ -493,7 +493,7 @@ fun GameScreen(
 
         // Score (top left), hearts (top center), hand and pause buttons (bottom left).
         if (!isPaused) {
-            GameHud(
+            GamePausedMenu(
                 currentScore = currentScore,
                 livesLeft = livesLeft,
                 bestScore = bestScore,
@@ -520,7 +520,7 @@ fun GameScreen(
 
             if (handControlEnabled ) {
 
-                RestartButton(
+                HandRestartButton(
                     restartHoldProgress = restartHoldProgress,
                     onRestart = {restartGameWithHands()  },
                     sounds = sounds

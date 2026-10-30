@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation.screen.game_logic
+package gupta.abhishek.googlemediapipe.presentation.game_overlay_utils.hud_utils
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

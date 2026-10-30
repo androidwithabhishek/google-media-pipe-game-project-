@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation.screen
+package gupta.abhishek.googlemediapipe.presentation.screens.other_screens.test
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
