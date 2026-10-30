@@ -16,6 +16,7 @@ class HandLandmarkerHelper(
     private val onError: (String) -> Unit
 ) {
 
+    @Volatile
     private var handLandmarker: HandLandmarker? = null
 
     fun setup() {

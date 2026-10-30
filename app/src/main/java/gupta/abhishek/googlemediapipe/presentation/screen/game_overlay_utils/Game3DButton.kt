@@ -19,12 +19,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.Dp
 import gupta.abhishek.googlemediapipe.core.game_assets.drawYellowRoundButton
 
-// ---------------------------------------------------------------------
-// Game3DButton
-//   A round yellow 3D button with an icon on top.
-//   Used for Play, Pause, Replay and the hand button.
-//   progress > 0 draws a green ring that fills clockwise (hand held on the button).
-// ---------------------------------------------------------------------
+
 @Composable
 internal fun Game3DButton(
     sizeDp: Dp,

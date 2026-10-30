@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation.screen.game_logic
+package gupta.abhishek.googlemediapipe.core.game_assets
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +14,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.rotate
+import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.CONFETTI_GRAVITY
+import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.CONFETTI_PIECE_COUNT
+import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.CONFETTI_SECONDS
 import kotlin.random.Random
 
 private val ConfettiColors = listOf(

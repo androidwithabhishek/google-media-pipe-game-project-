@@ -24,16 +24,6 @@ import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Path
-
-
-
-
-
-
-
-
-
-
 private fun roundedSquareProgressPath(half: Float, corner: Float): Path = Path().apply {
     val h = half
     val c = corner

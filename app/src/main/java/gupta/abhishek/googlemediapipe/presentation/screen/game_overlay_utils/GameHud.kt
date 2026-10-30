@@ -53,13 +53,7 @@ import gupta.abhishek.googlemediapipe.core.game_assets.drawHeart
 import gupta.abhishek.googlemediapipe.core.game_assets.drawPauseIcon
 import gupta.abhishek.googlemediapipe.core.game_assets.drawPlayIcon
 
-// ---------------------------------------------------------------------
-// GameHud
-//   Everything on top of the game while playing:
-//     top left   -> half apple, score, best
-//     top center -> hearts (one per life)
-//     bottom left -> camera button on top, pause button under it
-// ---------------------------------------------------------------------
+
 @Composable
 internal fun BoxScope.GameHud(
     currentScore: Int,
@@ -109,10 +103,6 @@ internal fun BoxScope.GameHud(
     }
 }
 
-// ---------------------------------------------------------------------
-// ScoreCorner
-//   Top left: half apple next to the score, with "Best" under it.
-// ---------------------------------------------------------------------
 @Composable
 private fun BoxScope.ScoreCorner(currentScore: Int, bestScore: Int) {
 
@@ -154,11 +144,7 @@ private fun BoxScope.ScoreCorner(currentScore: Int, bestScore: Int) {
     }
 }
 
-// ---------------------------------------------------------------------
-// LivesBar
-//   Top center: one heart per life. Full hearts are lives you still have.
-//   A small red hint can appear when the camera sees no hand (SHOW_HAND_HINT).
-// ---------------------------------------------------------------------
+
 @Composable
 private fun BoxScope.LivesBar(livesLeft: Int, handResult: HandLandmarkerResult?) {
 

@@ -43,6 +43,9 @@ class GameSounds(context: Context) {
 
     // Why game sounds may be paused: the game is paused, or the app is in the background.
     private var gamePaused = false
+
+    // Paused by the permission alert (the game is frozen behind it).
+    private var alertPaused = false
     private var appInForeground = true
     private var effectsPaused = false
     private var pausedAt = 0L
@@ -115,7 +118,8 @@ class GameSounds(context: Context) {
 
     // Pauses or resumes game sounds and music, based on the two pause reasons.
     private fun applyPauseState() {
-        val shouldPause = gamePaused || !appInForeground
+
+        val shouldPause = gamePaused || alertPaused || !appInForeground
 
         if (shouldPause && !effectsPaused) {
             effectsPaused = true
@@ -180,6 +184,12 @@ class GameSounds(context: Context) {
     // MainScreen calls this when the app comes to the front (and at start).
     fun startMusic() {
         appInForeground = true
+        applyPauseState()
+    }
+
+    // MainScreen calls this while the permission alert is open.
+    fun setAlertPaused(paused: Boolean) {
+        alertPaused = paused
         applyPauseState()
     }
 

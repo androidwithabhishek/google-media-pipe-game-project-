@@ -1,9 +1,9 @@
 package gupta.abhishek.googlemediapipe.presentation.screen.game_logic
 
-import gupta.abhishek.googlemediapipe.presentation.BombType
-import gupta.abhishek.googlemediapipe.presentation.FruitCut
-import gupta.abhishek.googlemediapipe.presentation.drawBomb
-import gupta.abhishek.googlemediapipe.presentation.drawFruitCut
+import gupta.abhishek.googlemediapipe.core.fruits.BombType
+import gupta.abhishek.googlemediapipe.core.fruits.FruitCut
+import gupta.abhishek.googlemediapipe.core.fruits.drawBomb
+import gupta.abhishek.googlemediapipe.core.fruits.drawFruitCut
 
 
 

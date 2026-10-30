@@ -82,7 +82,7 @@ object GameSoundSettings {
     val levelUp = SoundEffect(resId = null)
     val uiTouch = SoundEffect(
         resId = R.raw.ui_touch,   // keep your existing resId
-        volume = 0.8f,
+        volume = 0.7f,
         maxMillis = 600L,
         cooldownMillis = 120L,
         pausable = false
@@ -90,7 +90,7 @@ object GameSoundSettings {
 
     val restart = SoundEffect(
         resId = R.raw.restart_sound,    // keep your existing resId (use your file name)
-        volume = 1f,
+        volume = 10000000000000000000f,
         pausable = false
     )
     val handRestartProgress = SoundEffect(

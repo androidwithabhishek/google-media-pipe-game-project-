@@ -16,10 +16,6 @@ import androidx.compose.ui.unit.TextUnit
 import gupta.abhishek.googlemediapipe.core.fonts.GameFonts
 
 
-// ---------------------------------------------------------------------
-// GlossyText
-//   Big bold candy-style text. The shadow can be changed per use.
-// ---------------------------------------------------------------------
 @Composable
 internal fun GlossyText(
     text: String,
@@ -52,10 +48,7 @@ internal fun GlossyText(
     )
 }
 
-// ---------------------------------------------------------------------
-// GameOverText
-//   GlossyText with a tilt angle and a stronger shadow (set in game_overlay_utils).
-// ---------------------------------------------------------------------
+
 @Composable
 internal fun GameOverText(
     text: String,

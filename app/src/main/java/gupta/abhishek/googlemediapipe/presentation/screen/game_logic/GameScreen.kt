@@ -1,4 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation.screen
+package gupta.abhishek.googlemediapipe.presentation.screen.game_logic
 
 import RestartButton
 import androidx.compose.foundation.Canvas
@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,29 +34,19 @@ import gupta.abhishek.googlemediapipe.core.fruits.Blast
 import gupta.abhishek.googlemediapipe.core.fruits.Fruits
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandLandmarkerHelper
 import gupta.abhishek.googlemediapipe.core.sound.GameSounds
-import gupta.abhishek.googlemediapipe.presentation.BombType
-import gupta.abhishek.googlemediapipe.presentation.Bombs
-import gupta.abhishek.googlemediapipe.presentation.CUT_DURATION
-import gupta.abhishek.googlemediapipe.presentation.FruitCut
-import gupta.abhishek.googlemediapipe.presentation.screen.game_logic.*
+import gupta.abhishek.googlemediapipe.core.fruits.BombType
+import gupta.abhishek.googlemediapipe.core.fruits.Bombs
+import gupta.abhishek.googlemediapipe.core.fruits.CUT_DURATION
+import gupta.abhishek.googlemediapipe.core.fruits.FruitCut
+import gupta.abhishek.googlemediapipe.core.game_assets.ConfettiLayer
 import gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils.GameHud
 import gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils.GameOverCard
 import gupta.abhishek.googlemediapipe.presentation.screen.game_overlay_utils.PauseOverlay
 
 import kotlin.random.Random
 
-// ---------------------------------------------------------------------
-// CameraPreview
-//   The game screen. Shows the camera (hand mode) or the game background (touch only),
-//   drops fruits and bombs, and scores when a hand OR a finger cuts a fruit.
-//
-//   The pieces live in other files:
-//   GameSettings.kt (numbers), GameHelpers.kt (size and hit checks), CameraView.kt (camera),
-//   GameDrawing.kt (drawing), GameOverlay.kt (HUD, buttons, game over),
-//   HandInstruction.kt (one-time hand tip), Confetti.kt (high score burst)
-// ---------------------------------------------------------------------
 @Composable
-fun CameraPreview(
+fun GameScreen(
     helper: HandLandmarkerHelper,
     handResult: HandLandmarkerResult?,
     modifier: Modifier = Modifier,
@@ -64,19 +56,20 @@ fun CameraPreview(
     showHandInstruction: Boolean = false,         // true = show the hand tip (until it was seen once)
     onToggleHandControl: () -> Unit = {},         // called by the hand button
     onHandInstructionSeen: () -> Unit = {},       // called when the hand tip is closed
-    sounds: GameSounds? = null                    // sound effects and music (optional)
+    sounds: GameSounds? = null   ,
+    forcePause: Boolean = false
 ) {
 
     // ---------------- GAME STATE ----------------
 
     // Current score. Saved across screen rotation.
-    var currentScore by rememberSaveable { mutableStateOf(0) }
+    var currentScore by rememberSaveable { mutableIntStateOf(0) }
 
     // Best score so far. Saved across screen rotation.
-    var bestScore by rememberSaveable { mutableStateOf(0) }
+    var bestScore by rememberSaveable { mutableIntStateOf(0) }
 
     // Lives left. Game over when this reaches 0.
-    var livesLeft by rememberSaveable { mutableStateOf(STARTING_LIVES) }
+    var livesLeft by rememberSaveable { mutableIntStateOf(STARTING_LIVES) }
 
     // Whether the "new best score" message was already shown this game.
     var newBestAnnounced by remember { mutableStateOf(false) }
@@ -85,7 +78,7 @@ fun CameraPreview(
     var screenSize by remember { mutableStateOf(IntSize.Zero) }
 
     // Goes up by one each time the player beats the high score (starts the confetti).
-    var confettiTrigger by remember { mutableStateOf(0) }
+    var confettiTrigger by remember { mutableIntStateOf(0) }
 
     // True once the player has closed the hand tip during this session.
     var instructionDismissed by rememberSaveable { mutableStateOf(false) }
@@ -97,14 +90,14 @@ fun CameraPreview(
     // ---------------- FALLING ITEM STATE ----------------
 
     // Center of the falling item.
-    var itemX by remember { mutableStateOf(0f) }
-    var itemY by remember { mutableStateOf(-FRUIT_BASE_RADIUS_PX) }
+    var itemX by remember { mutableFloatStateOf(0f) }
+    var itemY by remember { mutableFloatStateOf(-FRUIT_BASE_RADIUS_PX) }
 
     // The fruit falling right now.
     var currentFruit by remember { mutableStateOf(Fruits.all.random()) }
 
     // Spin angle of the falling fruit, in degrees.
-    var fruitSpinAngle by remember { mutableStateOf(0f) }
+    var fruitSpinAngle by remember { mutableFloatStateOf(0f) }
 
     // The bomb falling right now. null means the falling item is a fruit.
     var currentBomb by remember { mutableStateOf<BombType?>(null) }
@@ -119,14 +112,14 @@ fun CameraPreview(
     val runningBlasts = remember { mutableStateListOf<Blast>() }
 
     // Camera shake: current offset, plus the running shake's strength and timing.
-    var shakeOffsetX by remember { mutableStateOf(0f) }
-    var shakeOffsetY by remember { mutableStateOf(0f) }
-    var shakeStrength by remember { mutableStateOf(0f) }
-    var shakeSecondsLeft by remember { mutableStateOf(0f) }
-    var shakeSecondsTotal by remember { mutableStateOf(0.001f) }
+    var shakeOffsetX by remember { mutableFloatStateOf(0f) }
+    var shakeOffsetY by remember { mutableFloatStateOf(0f) }
+    var shakeStrength by remember { mutableFloatStateOf(0f) }
+    var shakeSecondsLeft by remember { mutableFloatStateOf(0f) }
+    var shakeSecondsTotal by remember { mutableFloatStateOf(0.001f) }
 
     // How long the hand has been on the restart button, in seconds.
-    var restartHoldProgress by remember { mutableStateOf(0f) }
+    var restartHoldProgress by remember { mutableFloatStateOf(0f) }
 
     // Finger swipes on the game area (from one point to the next). The game loop checks them.
     // Plain list on purpose: only the UI thread touches it, and it does not need to redraw.
@@ -221,6 +214,7 @@ fun CameraPreview(
     val latestInstructionVisible by rememberUpdatedState(instructionVisible)
     val latestSounds by rememberUpdatedState(sounds)
     val latestOnGameOver by rememberUpdatedState(onGameOver)
+    val latestForcePause by rememberUpdatedState(forcePause)
 
     // Use the saved best score when it is higher than the one on screen.
     LaunchedEffect(bestScoreFromDatabase) {
@@ -261,7 +255,7 @@ fun CameraPreview(
                 touchSegments.clear()
 
                 // Paused, or the hand tip is open: freeze everything (time still passes, so nothing jumps).
-                if (isPaused || latestInstructionVisible) return@withFrameNanos
+                if (isPaused || latestForcePause || latestInstructionVisible) return@withFrameNanos
 
                 // ----- Restart button hold check (only on game over, hand mode only) -----
                 val restartButtonRadiusPx = restartButtonSizePx / 2f
@@ -446,17 +440,20 @@ fun CameraPreview(
 
             // Bottom layer: the camera in hand mode, the game background in touch-only mode.
             if (handControlEnabled) {
+
                 CameraView(helper = helper)
+
             } else {
                 Image(
                     painter = painterResource(id = R.drawable.gamebg),
-                    contentDescription = null,
+                    contentDescription = "background Image",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
             }
 
             // Falling item, cut animations and explosions. Finger swipes are read here.
+
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
@@ -505,10 +502,16 @@ fun CameraPreview(
                 showPauseButton = livesLeft > 0,
                 onPauseToggle = { togglePause() },
                 handControlEnabled = handControlEnabled,
-                onHandToggle = { onToggleHandControl() }
+                onHandToggle = {
+                    sounds?.playUiTouch()
+                    onToggleHandControl() }
             )
         }
+
+
         // Confetti when a new high score is beaten.
+
+
         ConfettiLayer(trigger = confettiTrigger)
 
         // Restart button and game over card, only on game over.
