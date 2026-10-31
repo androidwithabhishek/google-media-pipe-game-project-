@@ -6,7 +6,7 @@ import androidx.room.RoomDatabase
 // Version 2 added the app_settings table (see Migrations.kt).
 @Database(
     entities = [GameScoreEntity::class, AppSettingsEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class GameDatabase : RoomDatabase() {

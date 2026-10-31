@@ -90,7 +90,7 @@ object GameSoundSettings {
 
     val restart = SoundEffect(
         resId = R.raw.restart_sound,    // keep your existing resId (use your file name)
-        volume = 10000000000000000000f,
+        volume = 1f,
         pausable = false
     )
     val handRestartProgress = SoundEffect(

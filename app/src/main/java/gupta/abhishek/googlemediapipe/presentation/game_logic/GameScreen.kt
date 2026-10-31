@@ -57,7 +57,10 @@ fun GameScreen(
     onToggleHandControl: () -> Unit = {},         // called by the hand button
     onHandInstructionSeen: () -> Unit = {},       // called when the hand tip is closed
     sounds: GameSounds? = null   ,
-    forcePause: Boolean = false
+    forcePause: Boolean = false,
+    onMenuClick: () -> Unit = {},
+    onPlayingChanged: (Boolean) -> Unit = {}
+
 ) {
 
     // ---------------- GAME STATE ----------------
@@ -84,7 +87,7 @@ fun GameScreen(
     var instructionDismissed by rememberSaveable { mutableStateOf(false) }
 
     // True while the game is paused (pause button, bottom left).
-    var isPaused by remember { mutableStateOf(false) }
+    var isPaused by rememberSaveable { mutableStateOf(false) }
 
 
     // ---------------- FALLING ITEM STATE ----------------
@@ -214,6 +217,10 @@ fun GameScreen(
     val latestInstructionVisible by rememberUpdatedState(instructionVisible)
     val latestSounds by rememberUpdatedState(sounds)
     val latestOnGameOver by rememberUpdatedState(onGameOver)
+
+    val latestOnPlayingChanged by rememberUpdatedState(onPlayingChanged)
+
+
     val latestForcePause by rememberUpdatedState(forcePause)
 
     // Use the saved best score when it is higher than the one on screen.
@@ -223,6 +230,7 @@ fun GameScreen(
 
     // When the game ends (lives reach 0): play the sound and save the score once.
     LaunchedEffect(livesLeft) {
+        latestOnPlayingChanged(livesLeft > 0)
         if (livesLeft <= 0) {
             latestSounds?.playGameOver(newHighScore = currentScore > 0 && currentScore >= bestScore)
             latestOnGameOver(currentScore)
@@ -487,7 +495,8 @@ fun GameScreen(
         if (isPaused && livesLeft > 0) {
             PauseOverlay(
                 onResume = { togglePause()  },
-                onRestart = { restartGame()  }
+                onRestart = { restartGame()  },
+                onMenu = onMenuClick
             )
         }
 

@@ -46,6 +46,11 @@ class GameSounds(context: Context) {
 
     // Paused by the permission alert (the game is frozen behind it).
     private var alertPaused = false
+
+    // Sound effects and music switches (saved in the database, set from the menu).
+    private var soundEnabled = true
+    private var musicEnabled = true
+
     private var appInForeground = true
     private var effectsPaused = false
     private var pausedAt = 0L
@@ -87,6 +92,8 @@ class GameSounds(context: Context) {
 
     // Starts one sound effect, applying its volume, cooldown, maximum length and pause rules.
     private fun play(effect: SoundEffect) {
+
+        if (!soundEnabled) return
         val resId = effect.resId ?: return          // no file yet: stay silent
         val soundId = loadedIds[resId] ?: return
 
@@ -141,7 +148,7 @@ class GameSounds(context: Context) {
         }
 
         val player = music ?: return
-        if (shouldPause) {
+        if (shouldPause || !musicEnabled) {
             if (player.isPlaying) player.pause()
         } else if (!player.isPlaying) {
             player.start()
@@ -182,6 +189,36 @@ class GameSounds(context: Context) {
     }
 
     // MainScreen calls this when the app comes to the front (and at start).
+
+
+
+
+
+
+
+    // Turns sound effects on or off. Turning them off stops anything that is playing.
+    fun setSoundEnabled(enabled: Boolean) {
+        soundEnabled = enabled
+        if (!enabled) {
+            for (sound in activeSounds.values) soundPool.stop(sound.streamId)
+            activeSounds.clear()
+        }
+    }
+
+    // Turns background music on or off.
+    fun setMusicEnabled(enabled: Boolean) {
+        musicEnabled = enabled
+        applyPauseState()
+    }
+
+
+
+
+
+
+
+
+
     fun startMusic() {
         appInForeground = true
         applyPauseState()

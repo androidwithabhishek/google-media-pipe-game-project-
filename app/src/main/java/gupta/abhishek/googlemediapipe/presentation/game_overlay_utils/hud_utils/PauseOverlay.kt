@@ -1,7 +1,5 @@
 package gupta.abhishek.googlemediapipe.presentation.game_overlay_utils.hud_utils
 
-
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -20,17 +18,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import drawMenuIcon
-
-import gupta.abhishek.googlemediapipe.core.game_assets.drawPlayIcon
-import gupta.abhishek.googlemediapipe.core.game_assets.drawReplayIcon
 import gupta.abhishek.googlemediapipe.core.fonts.GlossyText
 import gupta.abhishek.googlemediapipe.core.game_assets.Game3DSquareButton
 
+import gupta.abhishek.googlemediapipe.core.game_assets.drawPlayIcon
+import gupta.abhishek.googlemediapipe.core.game_assets.drawReplayIcon
 
+// ---------------------------------------------------------------------
+// PauseOverlay
+//   Shown while paused: the screen goes dark, with three buttons.
+//   Play   -> continue the game
+//   Replay -> start a new game
+//   Menu   -> open the menu screen (the game stays paused underneath)
+// ---------------------------------------------------------------------
 @Composable
 internal fun BoxScope.PauseOverlay(
     onResume: () -> Unit,
-    onRestart: () -> Unit
+    onRestart: () -> Unit,
+    onMenu: () -> Unit,
+
 ) {
     Column(
         modifier = Modifier
@@ -65,10 +71,10 @@ internal fun BoxScope.PauseOverlay(
                 icon = { r -> drawReplayIcon(r) }
             )
 
-
+            // Open the menu screen.
             Game3DSquareButton(
                 sizeDp = 110.dp,
-                onClick = onRestart,
+                onClick = onMenu,
                 icon = { r -> drawMenuIcon(r) }
             )
         }

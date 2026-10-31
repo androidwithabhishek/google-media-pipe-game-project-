@@ -16,23 +16,35 @@ class SettingsRepositoryImpl @Inject constructor(
         dao.observeSettings().map { row -> row?.toModel() ?: PlayerSettings() }
 
     override suspend fun setHandControlEnabled(enabled: Boolean) {
-        val current = currentOrDefault()
-        dao.save(current.copy(handControlEnabled = enabled))
+        dao.save(currentOrDefault().copy(handControlEnabled = enabled))
     }
 
     override suspend fun markHandInstructionSeen() {
-        val current = currentOrDefault()
-        dao.save(current.copy(handInstructionSeen = true))
+        dao.save(currentOrDefault().copy(handInstructionSeen = true))
     }
 
-    private suspend fun currentOrDefault(): AppSettingsEntity =
-        dao.getSettings() ?: AppSettingsEntity(
-            handControlEnabled = PlayerSettings().handControlEnabled,
-            handInstructionSeen = PlayerSettings().handInstructionSeen
+    override suspend fun setSoundEnabled(enabled: Boolean) {
+        dao.save(currentOrDefault().copy(soundEnabled = enabled))
+    }
+
+    override suspend fun setMusicEnabled(enabled: Boolean) {
+        dao.save(currentOrDefault().copy(musicEnabled = enabled))
+    }
+
+    private suspend fun currentOrDefault(): AppSettingsEntity {
+        val defaults = PlayerSettings()
+        return dao.getSettings() ?: AppSettingsEntity(
+            handControlEnabled = defaults.handControlEnabled,
+            handInstructionSeen = defaults.handInstructionSeen,
+            soundEnabled = defaults.soundEnabled,
+            musicEnabled = defaults.musicEnabled
         )
+    }
 
     private fun AppSettingsEntity.toModel() = PlayerSettings(
         handControlEnabled = handControlEnabled,
-        handInstructionSeen = handInstructionSeen
+        handInstructionSeen = handInstructionSeen,
+        soundEnabled = soundEnabled,
+        musicEnabled = musicEnabled
     )
 }

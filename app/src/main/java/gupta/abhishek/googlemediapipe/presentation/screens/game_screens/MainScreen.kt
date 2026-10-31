@@ -28,15 +28,15 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
 import gupta.abhishek.googlemediapipe.core.google_media_pipe.HandLandmarkerHelper
-import gupta.abhishek.googlemediapipe.presentation.game_logic.HandOverlay
 import gupta.abhishek.googlemediapipe.core.sound.GameSounds
 import gupta.abhishek.googlemediapipe.presentation.MainViewModel
 import gupta.abhishek.googlemediapipe.presentation.game_logic.GameScreen
+import gupta.abhishek.googlemediapipe.presentation.game_logic.HandOverlay
 import gupta.abhishek.googlemediapipe.presentation.game_overlay_utils.hud_utils.CameraPermissionAlert
 
 // ---------------------------------------------------------------------
 // MainScreen
-//   The real app screen. Decides when the camera is really on:
+//   The game screen. Decides when the camera is really on:
 //     camera on  = the player wants it AND the permission is granted
 //     otherwise  = touch mode, and the camera is never opened
 // ---------------------------------------------------------------------
@@ -47,6 +47,8 @@ fun MainScreen(
     showHandAnimation: Boolean = true,
     onCameraNeeded: () -> Unit = {},
     viewModel: MainViewModel = hiltViewModel(),
+    onMenuClick: () -> Unit = {},
+
 ) {
     val bestScore by viewModel.bestScore.collectAsState()
     val settings by viewModel.settings.collectAsState()
@@ -84,7 +86,6 @@ fun MainScreen(
 
     // The camera button.
     val onToggleCamera: () -> Unit = {
-
         when {
             cameraOn -> {
                 viewModel.setHandControlEnabled(false)            // turning off: no permission needed
@@ -103,7 +104,10 @@ fun MainScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner) {
+        sounds.setSoundEnabled(settings.soundEnabled)
+        sounds.setMusicEnabled(settings.musicEnabled)
         sounds.startMusic()
+
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
@@ -123,8 +127,6 @@ fun MainScreen(
         }
     }
 
-
-
     // Load the hand model only when the camera is really in use (in the background).
     LaunchedEffect(cameraOn) {
         if (cameraOn) onCameraNeeded()
@@ -133,6 +135,14 @@ fun MainScreen(
     // Sound effects and music stop while the permission alert is open.
     LaunchedEffect(showPermissionAlert) {
         sounds.setAlertPaused(showPermissionAlert)
+    }
+
+    // Sound and music follow the saved settings, also when they change in the menu.
+    LaunchedEffect(settings.soundEnabled) {
+        sounds.setSoundEnabled(settings.soundEnabled)
+    }
+    LaunchedEffect(settings.musicEnabled) {
+        sounds.setMusicEnabled(settings.musicEnabled)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -148,7 +158,9 @@ fun MainScreen(
             onToggleHandControl = onToggleCamera,
             onHandInstructionSeen = { viewModel.markHandInstructionSeen() },
             sounds = sounds,
-            forcePause = showPermissionAlert
+            forcePause = showPermissionAlert,
+            onPlayingChanged = { playing -> viewModel.setGameInProgress(playing) },
+            onMenuClick = onMenuClick
         )
 
         // The hand overlay only shows while the camera is really on.
@@ -174,15 +186,11 @@ fun MainScreen(
             )
         }
     }
-
-
 }
-
 
 private fun Context.hasCameraPermission(): Boolean =
     ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
             PackageManager.PERMISSION_GRANTED
-
 
 private fun Context.openAppSettings() {
     val intent = Intent(
