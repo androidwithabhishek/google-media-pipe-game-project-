@@ -49,7 +49,7 @@ import gupta.abhishek.googlemediapipe.R
 import gupta.abhishek.googlemediapipe.core.fonts.GameFonts
 import gupta.abhishek.googlemediapipe.core.fonts.GlossyText
 import gupta.abhishek.googlemediapipe.core.sound.GameSounds
-import gupta.abhishek.googlemediapipe.presentation.MenuViewModel
+
 
 // ---------------------------------------------------------------------
 // MainMenuScreen
@@ -159,15 +159,15 @@ fun MainMenuScreen(
                 onIcon = Icons.Filled.VolumeUp,
                 offIcon = Icons.Filled.VolumeOff,
                 description = "Sound",
-                onClick = { viewModel.setSoundEnabled(!settings.soundEnabled) }
+                onClick = { viewModel.toggleSound() }
             )
 
             ToggleIconButton(
-                on = settings.musicEnabled,
+                on = settings.soundEnabled && settings.musicEnabled,
                 onIcon = Icons.Filled.MusicNote,
                 offIcon = Icons.Filled.MusicOff,
                 description = "Music",
-                onClick = { viewModel.setMusicEnabled(!settings.musicEnabled) }
+                onClick = { viewModel.toggleMusic() }
             )
         }
     }

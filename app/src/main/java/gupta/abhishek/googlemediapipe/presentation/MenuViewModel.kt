@@ -1,6 +1,4 @@
-package gupta.abhishek.googlemediapipe.presentation
-
-
+package gupta.abhishek.googlemediapipe.presentation.screens.other_screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -33,11 +31,24 @@ class MenuViewModel @Inject constructor(
     // True when a game is running or was left unfinished: the button says "Continue".
     val gameInProgress: StateFlow<Boolean> = session.gameInProgress
 
-    fun setSoundEnabled(enabled: Boolean) {
-        viewModelScope.launch { settingsRepository.setSoundEnabled(enabled) }
+    // Sound on/off. Turning sound off also silences the music.
+    // The music setting itself is kept, so turning sound back on restores the music.
+    fun toggleSound() {
+        val turnOn = !settings.value.soundEnabled
+        viewModelScope.launch { settingsRepository.setSoundEnabled(turnOn) }
     }
 
-    fun setMusicEnabled(enabled: Boolean) {
-        viewModelScope.launch { settingsRepository.setMusicEnabled(enabled) }
+    // Music on/off. If sound is off, tapping music turns sound and music on,
+    // so the music can actually be heard.
+    fun toggleMusic() {
+        val current = settings.value
+        viewModelScope.launch {
+            if (!current.soundEnabled) {
+                settingsRepository.setSoundEnabled(true)
+                settingsRepository.setMusicEnabled(true)
+            } else {
+                settingsRepository.setMusicEnabled(!current.musicEnabled)
+            }
+        }
     }
 }

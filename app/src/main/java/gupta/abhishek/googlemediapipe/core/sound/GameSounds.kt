@@ -148,7 +148,7 @@ class GameSounds(context: Context) {
         }
 
         val player = music ?: return
-        if (shouldPause || !musicEnabled) {
+        if (shouldPause || !musicEnabled || !soundEnabled) {
             if (player.isPlaying) player.pause()
         } else if (!player.isPlaying) {
             player.start()
@@ -197,12 +197,14 @@ class GameSounds(context: Context) {
 
 
     // Turns sound effects on or off. Turning them off stops anything that is playing.
+    // Turns sound on or off. Off also silences the music, and on lets it play again.
     fun setSoundEnabled(enabled: Boolean) {
         soundEnabled = enabled
         if (!enabled) {
             for (sound in activeSounds.values) soundPool.stop(sound.streamId)
             activeSounds.clear()
         }
+        applyPauseState()
     }
 
     // Turns background music on or off.
